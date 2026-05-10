@@ -63,7 +63,7 @@ Public alpha acceptance:
 | Access | Unverified users cannot reach app pages or non-auth APIs |
 | Tenant isolation | Protected API routes resolve an active household or admin guard |
 | Operations | Backups write `.sql.gz` files and restore successfully |
-| Release | Docker publish runs only after CI verification succeeds |
+| Release | Docker image build runs after CI verification; Docker Hub publish runs only when credentials are configured |
 
 ## Troubleshooting
 

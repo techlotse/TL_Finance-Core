@@ -1,9 +1,9 @@
 name: Build and push Docker image
 
 # Triggers:
-#   - push to main           → :latest, :<sha>
-#   - tag matching v*.*.*    → :v1.2.3, :1.2.3, :1.2, :1, :latest
-#   - manual dispatch        → :<sha>
+#   - push to main           → build, and publish :latest / :<sha> when Docker Hub secrets exist
+#   - tag matching v*.*.*    → build, and publish semver tags when Docker Hub secrets exist
+#   - manual dispatch        → build, and publish :<sha> when Docker Hub secrets exist
 on:
   pull_request:
   push:
@@ -15,6 +15,7 @@ on:
 
 env:
   IMAGE_NAME: tl-finance-core
+  DOCKERHUB_NAMESPACE: techlotse
 
 jobs:
   verify:
@@ -83,6 +84,10 @@ jobs:
     needs: verify
     if: github.event_name != 'pull_request'
 
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.ORG_DOCKERHUB_USER }}
+      DOCKERHUB_TOKEN: ${{ secrets.ORG_DOCKERHUB_KEY }}
+
     permissions:
       contents: read
       packages: read
@@ -97,17 +102,31 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve Docker publish target
+        id: publish
+        shell: bash
+        run: |
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "image=docker.io/${DOCKERHUB_NAMESPACE}/${IMAGE_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ORG_DOCKERHUB_USER or ORG_DOCKERHUB_KEY is missing; building without publishing."
+          fi
+
       - name: Log in to Docker Hub
+        if: steps.publish.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Extract Docker metadata
+        if: steps.publish.outputs.enabled == 'true'
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: ${{ steps.publish.outputs.image }}
           # Build a useful tag set for v1 release plus everyday CI:
           #   - branch builds  → :main / :latest
           #   - sha            → :<sha>
@@ -122,6 +141,7 @@ jobs:
             type=semver,pattern=v{{version}}
 
       - name: Build and push (linux/amd64 + linux/arm64)
+        if: steps.publish.outputs.enabled == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -131,5 +151,16 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build without publishing (linux/amd64 + linux/arm64)
+        if: steps.publish.outputs.enabled != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          platforms: linux/amd64,linux/arm64
+          tags: local/${{ env.IMAGE_NAME }}:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max

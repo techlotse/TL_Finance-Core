@@ -28,7 +28,7 @@ first interface aligned to TL Finance Core Style Guide v1.0.
 | Security | tenant ownership checks, audit log, sealed admin secrets |
 | Forecasting | recurring budget items, transfers, balance snapshots, FX cache |
 | Deployment | Docker, optional nginx load balancer, PostgreSQL hot standby |
-| CI | GitHub Actions Docker build and Docker Hub publish |
+| CI | GitHub Actions verification, Docker build, and optional Docker Hub publish |
 
 Project layout:
 

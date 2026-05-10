@@ -36,6 +36,11 @@ Changed:
 - Added locked npm dependency installation with `package-lock.json`.
 - Added CI verification before Docker publish: install, Prisma generate,
   typecheck, lint, unit tests, readiness checks, migration deploy, and build.
+- Made Docker Hub publish conditional on configured Docker Hub credentials while
+  keeping the multi-arch image build in CI, without generating Docker Hub tags
+  when publish secrets are absent.
+- Published Docker images under the fixed `techlotse` Docker Hub namespace
+  instead of deriving the repository path from the login username.
 - Added email-verification app/API gates and a resend screen.
 - Added production Docker entrypoint validation for placeholder secrets.
 - Added `pg_dump` support to the runtime image and hardened the backup runner.
