@@ -118,8 +118,8 @@ jobs:
         if: steps.publish.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.ORG_DOCKERHUB_USER }}
+          password: ${{ secrets.ORG_DOCKERHUB_KEY }}
 
       - name: Extract Docker metadata
         if: steps.publish.outputs.enabled == 'true'
