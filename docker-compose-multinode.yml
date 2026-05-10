@@ -1,0 +1,228 @@
+# ---------------------------------------------------------------------------
+# TL Finance Core - multinode stack (same-machine, local deployment)
+#
+# Services:
+#   nginx            — reverse proxy / load balancer (ports 80 → 443)
+#   app-1 / app-2   — two Next.js instances behind nginx
+#   postgres-primary — write-primary PostgreSQL 16
+#   postgres-replica — streaming hot-standby (read replica / failover)
+#   redis            — future session / cache store
+#   pgadmin          — optional web DB UI (port 5050)
+#
+# Quick start:
+#   ./setup-local.sh          # generate ssl/ certs and .env
+#   docker compose -f docker-compose-multinode.yml up -d --build
+#   docker compose -f docker-compose-multinode.yml exec app-1 \
+#     npx prisma migrate deploy
+#   docker compose -f docker-compose-multinode.yml exec app-1 \
+#     npx prisma db seed
+# ---------------------------------------------------------------------------
+
+services:
+
+  # ==================== NGINX Load Balancer ====================
+  nginx:
+    image: nginx:alpine
+    container_name: tl-finance-core-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./ssl/key.pem:/etc/nginx/ssl/key.pem:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ==================== App Instance 1 ====================
+  app-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tl-finance-core-app-1
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://budget:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres-primary:5432/budget?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
+      FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
+      BACKUP_DIR: /var/backups/tl-finance-core
+      HOSTNAME: app-1
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - app_backups:/var/backups/tl-finance-core
+
+  # ==================== App Instance 2 ====================
+  app-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tl-finance-core-app-2
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://budget:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres-primary:5432/budget?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
+      FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
+      BACKUP_DIR: /var/backups/tl-finance-core
+      HOSTNAME: app-2
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - app_backups:/var/backups/tl-finance-core
+
+  # ==================== PostgreSQL Primary ====================
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: tl-finance-core-db-primary
+    environment:
+      POSTGRES_USER: budget
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: budget
+      # Passed to init-primary.sh so it can create the replication user
+      # with the same password used by the replica's pg_basebackup call.
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Set REPLICATION_PASSWORD in .env}
+    # Pass WAL / replication settings as runtime postgres flags.
+    # IMPORTANT: must be a YAML list (exec form), not a string (shell form).
+    # A string command is wrapped in /bin/sh -c "...", so the entrypoint
+    # receives /bin/sh as $1 instead of postgres, skips initdb entirely,
+    # and the container crashes because the data directory is never created.
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      # Runs once on first initialisation to create the replication user.
+      - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/01-init-primary.sh:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget -d budget"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  # ==================== PostgreSQL Replica (hot standby) ====================
+  # Uses pg_basebackup -R which is the correct PG12+ mechanism:
+  # it writes standby.signal and primary_conninfo into postgresql.auto.conf.
+  # recovery.conf was removed in PostgreSQL 12.
+  postgres-replica:
+    image: postgres:16-alpine
+    container_name: tl-finance-core-db-replica
+    user: postgres
+    entrypoint: ["/bin/sh", "/scripts/init-replica.sh"]
+    environment:
+      POSTGRES_PRIMARY_HOST: postgres-primary
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Set REPLICATION_PASSWORD in .env}
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+      - ./postgres/init-replica.sh:/scripts/init-replica.sh:ro
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget -d budget"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # pg_basebackup copies the full DB; give it time on first start.
+      start_period: 120s
+    restart: unless-stopped
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: tl-finance-core-redis
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      # Must pass -a with the password; otherwise redis-cli returns NOAUTH error.
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ==================== PgAdmin (optional) ====================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tl-finance-core-pgadmin
+    profiles: ["tools"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@localhost}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?Set PGADMIN_PASSWORD in .env before enabling pgadmin}
+    ports:
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - postgres-primary
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_primary_data:
+    driver: local
+  postgres_replica_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_backups:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

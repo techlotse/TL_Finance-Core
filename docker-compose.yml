@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tl-finance-core-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://budget:${DB_PASSWORD:?Set DB_PASSWORD in .env}@db:5432/budget?schema=public
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
+      FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
+      BACKUP_DIR: /var/backups/tl-finance-core
+    ports:
+      - "3000:3000"
+    volumes:
+      - app_backups:/var/backups/tl-finance-core
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: tl-finance-core-db
+    # Note: POSTGRES_USER / DB are intentionally still `budget` — renaming
+    # would require a migration step for any existing volume. The DATABASE_URL
+    # references match. If you rename for a fresh deploy, update both.
+    environment:
+      POSTGRES_USER: budget
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: budget
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget -d budget"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  app_backups:
