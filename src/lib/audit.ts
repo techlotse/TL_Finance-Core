@@ -19,6 +19,7 @@ export type AuditAction =
   | "password_reset_complete"
   | "email_verification_request"
   | "email_verified"
+  | "ai_advice_generate"
   | "admin_config_update";
 
 export interface AuditEntry {

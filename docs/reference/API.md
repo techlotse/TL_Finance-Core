@@ -25,6 +25,7 @@ Endpoint groups:
 | Assets | `/api/assets`, `/api/assets/[id]` |
 | Forecast | `/api/forecast`, `/api/forecast/account/[id]`, `/api/dashboard/summary` |
 | Investments | `/api/investment-projections`, `/api/investment-projections/[id]`, `/result` |
+| Advice | `POST /api/advice/ai` |
 | Admin | `/api/admin/config/*`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
 | FX | `GET /api/exchange-rates/latest?from=CHF&to=EUR` |
 
