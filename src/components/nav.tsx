@@ -217,8 +217,12 @@ function HouseholdSwitcher({
 }
 
 export function MobileNav({
+  memberships = [],
+  activeMembershipId = null,
   productTier = "core"
 }: {
+  memberships?: NavMembership[];
+  activeMembershipId?: string | null;
   productTier?: ProductTier | string | null;
 }) {
   const pathname = usePathname();
@@ -239,6 +243,14 @@ export function MobileNav({
         </Link>
         <ThemeToggle />
       </div>
+      {memberships.length > 1 && (
+        <div className="border-t border-border px-4 py-2">
+          <HouseholdSwitcher
+            memberships={memberships}
+            activeMembershipId={activeMembershipId}
+          />
+        </div>
+      )}
       <div className="overflow-x-auto border-t border-border">
         <ul className="flex min-w-full" role="list">
           {items.map((it) => {

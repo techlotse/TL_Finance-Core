@@ -1,12 +1,7 @@
 import { prisma } from "./prisma";
 import { getCategoryPreset, type CategoryPreset } from "./category-presets";
 
-/**
- * Create a household for a user who has just signed up. Wraps everything in
- * a transaction so a failure half-way through doesn't leave a half-built
- * household lying around.
- */
-export async function applyOnboarding(opts: {
+export async function createHouseholdForUser(opts: {
   userId: string;
   householdName: string;
   baseCurrency: string;
@@ -16,16 +11,6 @@ export async function applyOnboarding(opts: {
   const preset = getCategoryPreset(opts.categoryPreset);
 
   return prisma.$transaction(async (tx) => {
-    // Defensive: a user might re-run onboarding after a partial failure. If
-    // they already own a household, return it instead of creating a duplicate.
-    const existing = await tx.householdMember.findFirst({
-      where: { userId: opts.userId },
-      include: { household: true }
-    });
-    if (existing) {
-      return existing.household;
-    }
-
     const household = await tx.household.create({
       data: {
         name: opts.householdName,
@@ -33,7 +18,7 @@ export async function applyOnboarding(opts: {
       }
     });
 
-    await tx.householdMember.create({
+    const membership = await tx.householdMember.create({
       data: {
         householdId: household.id,
         userId: opts.userId,
@@ -72,6 +57,32 @@ export async function applyOnboarding(opts: {
       groupSort++;
     }
 
-    return household;
+    return { household, membership };
   });
+}
+
+/**
+ * Create a household for a user who has just signed up. Wraps everything in
+ * a transaction so a failure half-way through doesn't leave a half-built
+ * household lying around.
+ */
+export async function applyOnboarding(opts: {
+  userId: string;
+  householdName: string;
+  baseCurrency: string;
+  earners: Array<{ name: string }>;
+  categoryPreset: CategoryPreset;
+}) {
+  // Defensive: a user might re-run onboarding after a partial failure. If
+  // they already own a household, return it instead of creating a duplicate.
+  const existing = await prisma.householdMember.findFirst({
+    where: { userId: opts.userId },
+    include: { household: true }
+  });
+  if (existing) {
+    return existing.household;
+  }
+
+  const created = await createHouseholdForUser(opts);
+  return created.household;
 }

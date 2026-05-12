@@ -3,6 +3,7 @@ import { getActiveHouseholdForPage } from "@/lib/page-auth";
 import { PageHeader } from "@/components/page-header";
 import {
   HouseholdSettingsForm,
+  HouseholdMembershipsCard,
   IncomeEarnersCard,
   CategoriesCard,
   ExchangeRateStatusCard
@@ -17,11 +18,16 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { SettingsTabs } from "./settings-tabs";
+import { requirePageSession } from "@/lib/page-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const household = await getActiveHouseholdForPage("/settings");
+  const ctx = await requirePageSession("/settings");
+  if (!ctx.membership) {
+    await getActiveHouseholdForPage("/settings");
+  }
+  const household = ctx.membership!.household;
   const [earners, groups, latestRate] = await Promise.all([
     prisma.incomeEarner.findMany({
       where: { householdId: household.id, deletedAt: null },
@@ -51,12 +57,23 @@ export default async function SettingsPage() {
 
       <SettingsTabs
         household={
-          <HouseholdSettingsForm
-            initial={{
-              name: household.name,
-              baseCurrency: household.baseCurrency
-            }}
-          />
+          <div className="space-y-4">
+            <HouseholdSettingsForm
+              initial={{
+                name: household.name,
+                baseCurrency: household.baseCurrency
+              }}
+            />
+            <HouseholdMembershipsCard
+              activeMembershipId={ctx.membership.id}
+              memberships={ctx.memberships.map((m) => ({
+                id: m.id,
+                householdName: m.household.name,
+                baseCurrency: m.household.baseCurrency,
+                role: m.role
+              }))}
+            />
+          </div>
         }
         earners={
           <IncomeEarnersCard

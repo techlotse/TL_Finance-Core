@@ -43,7 +43,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         productTier={productTier}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileNav productTier={productTier} />
+        <MobileNav
+          memberships={memberships}
+          activeMembershipId={activeMembershipId}
+          productTier={productTier}
+        />
         <main className="flex-1 px-4 py-6 sm:px-6 md:px-10 md:py-8">
           {/* Style guide: max-width 1200px, 8px grid (py-8 = 32px = 4×8) */}
           <div className="mx-auto w-full max-w-brand-layout">{children}</div>

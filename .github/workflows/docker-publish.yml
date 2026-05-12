@@ -76,6 +76,9 @@ jobs:
       - name: Validate migrations
         run: npx prisma migrate deploy
 
+      - name: Access-control integration tests
+        run: npm run test:access
+
       - name: Build
         run: npm run build
 

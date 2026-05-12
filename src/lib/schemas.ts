@@ -270,6 +270,8 @@ export const onboardingSchema = z.object({
   categoryPreset: categoryPresetEnum
 });
 
+export const householdCreateSchema = onboardingSchema;
+
 // ---- Admin config ----
 export const adminAuthConfigPatchSchema = z.object({
   signupEnabled: z.boolean().optional(),
