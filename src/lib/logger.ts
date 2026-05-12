@@ -26,11 +26,9 @@ function emit(level: Level, msg: string, ctx?: Record<string, unknown>) {
   };
   if (process.env.NODE_ENV === "production") {
     // One-line JSON — easy to ingest with Loki / GlitchTip / Datadog.
-    // eslint-disable-next-line no-console
     console.log(JSON.stringify(record));
   } else {
     const tail = ctx ? " " + JSON.stringify(ctx) : "";
-    // eslint-disable-next-line no-console
     console.log(`[${record.ts}] ${level.toUpperCase()} ${msg}${tail}`);
   }
 }

@@ -4,6 +4,7 @@ node_modules
 .github
 .env
 .env.local
+src/generated/prisma
 npm-debug.log
 Dockerfile
 docker-compose.yml

@@ -45,9 +45,14 @@ Schema highlights:
 
 ## Configuration
 
-Prisma uses PostgreSQL through `DATABASE_URL`. The generator includes
-`linux-musl-openssl-3.0.x` so the production Alpine image contains the correct
-query engine.
+Prisma ORM 7 uses PostgreSQL through `DATABASE_URL` configured in
+`prisma.config.ts`. The schema uses the ESM-first `prisma-client` generator and
+writes the generated client to `src/generated/prisma`; that directory is
+git-ignored and recreated by `prisma generate`.
+
+Runtime database access goes through `@prisma/adapter-pg` and `pg`. The app
+sets PostgreSQL adapter timeouts to preserve the fail-fast behavior used before
+the Prisma 7 driver-adapter migration.
 
 ## Deployment
 
@@ -77,8 +82,8 @@ application-level migration code when needed.
 
 ## Troubleshooting
 
-- If Prisma cannot find its query engine inside Docker, rebuild the image after
-  `prisma generate`.
+- If TypeScript cannot resolve `@/generated/prisma/*`, run
+  `npx prisma generate` or rebuild the image so the generated client exists.
 - If duplicate category names fail, check the unique constraints scoped by
   household/group.
 - If migrations diverge, inspect the database migration table before changing

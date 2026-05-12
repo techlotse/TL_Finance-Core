@@ -4,7 +4,7 @@ import {
   BudgetLineItem,
   Recurrence,
   ScheduledTransfer
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 import { Decimal, toDecimal } from "./money";
 import { occurrencesInMonth, monthlyMultiplier as monthlyMultiplierFromRecurrence } from "./recurrence";
 import { convertManyToBase, getExchangeRate } from "./exchange-rates";

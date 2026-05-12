@@ -1,4 +1,4 @@
-import { Recurrence } from "@prisma/client";
+import { Recurrence } from "@/generated/prisma/enums";
 import { Decimal, toDecimal } from "./money";
 
 /**

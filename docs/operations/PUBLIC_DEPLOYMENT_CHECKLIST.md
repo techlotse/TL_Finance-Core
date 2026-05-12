@@ -16,7 +16,7 @@ Required production shape:
 | TLS | Real certificate at the public reverse proxy |
 | Mail | SMTP configured and tested for reset + verification delivery |
 | Backups | `pg_dump` backup path writable, manual run tested, restore tested |
-| CI | Typecheck, lint, unit tests, readiness check, migration deploy, build |
+| CI | Node 24-compatible GitHub Actions, typecheck, lint, unit tests, readiness check, migration deploy, build |
 | Secrets | `APP_SECRET`, DB, replication, Redis, and PgAdmin passwords replaced |
 
 ## Configuration

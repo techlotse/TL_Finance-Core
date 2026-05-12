@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import type { User, HouseholdMember, Household } from "@prisma/client";
+import type { User, HouseholdMember, Household } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
 import { sha256Hex, randomToken } from "./crypto";
 import { SESSION_COOKIE } from "./auth-shared";

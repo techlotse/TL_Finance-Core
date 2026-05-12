@@ -1,6 +1,6 @@
 import { getSession } from "./auth";
 import { assertEmailVerifiedForAppAccess } from "./auth-policy";
-import type { Household } from "@prisma/client";
+import type { Household } from "@/generated/prisma/client";
 
 /**
  * Household resolution. The whole rest of the codebase asks for the active

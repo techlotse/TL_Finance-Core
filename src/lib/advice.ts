@@ -9,7 +9,7 @@ import type {
   CategoryGroup,
   IncomeEarner,
   InvestmentProjection
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 import { prisma } from "./prisma";
 import { convertManyToBase, getExchangeRate } from "./exchange-rates";
 import { summarizeMonthlyBudget } from "./forecast";

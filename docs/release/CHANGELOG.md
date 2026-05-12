@@ -36,6 +36,9 @@ Changed:
 - Added locked npm dependency installation with `package-lock.json`.
 - Added CI verification before Docker publish: install, Prisma generate,
   typecheck, lint, unit tests, readiness checks, migration deploy, and build.
+- Upgraded GitHub workflow actions to Node 24-compatible major versions.
+- Upgraded Prisma ORM to 7.8.0 with `prisma.config.ts`, generated client
+  output under `src/generated/prisma`, and the PostgreSQL driver adapter.
 - Made Docker Hub publish conditional on configured Docker Hub credentials while
   keeping the multi-arch image build in CI, without generating Docker Hub tags
   when publish secrets are absent.

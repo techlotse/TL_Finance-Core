@@ -1,4 +1,4 @@
-import { CategoryType } from "@prisma/client";
+import { CategoryType } from "@/generated/prisma/enums";
 
 /**
  * Category presets used by the onboarding wizard and the dev seed script.

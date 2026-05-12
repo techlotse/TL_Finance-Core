@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { User } from "@/generated/prisma/client";
 import { loadAdminConfig } from "./admin-config";
 
 type VerificationUser = Pick<User, "emailVerifiedAt">;

@@ -1,4 +1,4 @@
-import { ContributionFrequency } from "@prisma/client";
+import { ContributionFrequency } from "@/generated/prisma/enums";
 import { Decimal, toDecimal, type DecimalInput } from "./money";
 
 export interface InvestmentInputs {

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession, type SessionContext } from "./auth";
 import { isEmailVerificationGateActive } from "./auth-policy";
-import type { Household } from "@prisma/client";
+import type { Household } from "@/generated/prisma/client";
 
 function signinUrl(next: string): string {
   return `/signin?next=${encodeURIComponent(next)}`;
