@@ -54,6 +54,12 @@ export async function DELETE(
     const url = new URL(req.url);
     const force = url.searchParams.get("force") === "true";
 
+    const found = await prisma.categoryGroup.findFirst({
+      where: { id, householdId },
+      select: { id: true }
+    });
+    if (!found) throw new OwnershipError("Category group not found", 404);
+
     const remaining = await prisma.category.count({
       where: { groupId: id, deletedAt: null }
     });
@@ -73,11 +79,9 @@ export async function DELETE(
           409
         );
       }
-      const result = await prisma.categoryGroup.deleteMany({
+      await prisma.categoryGroup.deleteMany({
         where: { id, householdId }
       });
-      if (result.count === 0)
-        throw new OwnershipError("Category group not found", 404);
 
       await writeAudit({
         action: "delete",

@@ -6,6 +6,8 @@ import { randomToken, sha256Hex } from "@/lib/crypto";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/logger";
 import { sendMail } from "@/lib/mailer";
+import { loadAdminConfig } from "@/lib/admin-config";
+import { assertAuditRateLimit } from "@/lib/rate-limit";
 
 const VERIFY_TTL_HOURS = 24;
 
@@ -28,7 +30,16 @@ export async function POST(req: NextRequest) {
     if (ctx.user.emailVerifiedAt) {
       return jsonOk({ ok: true, alreadyVerified: true });
     }
+    const cfg = await loadAdminConfig();
     const ipHash = ipHashFromHeaders(req.headers);
+    await assertAuditRateLimit({
+      action: "email_verification_request",
+      ipHash,
+      userId: ctx.user.id,
+      windowMs: 60 * 60 * 1000,
+      max: cfg.authConfig.maxEmailVerificationRequestsPerHour,
+      message: "Too many verification email requests — please try again later"
+    });
 
     const token = randomToken(32);
     const tokenHash = sha256Hex(token);

@@ -5,7 +5,43 @@ import { SESSION_COOKIE, createSession, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GET as getHousehold } from "@/app/api/household/route";
 import { PATCH as patchAccount } from "@/app/api/accounts/[id]/route";
+import { DELETE as deleteAccount } from "@/app/api/accounts/[id]/route";
+import {
+  PATCH as patchCategory,
+  DELETE as deleteCategory
+} from "@/app/api/categories/[id]/route";
+import {
+  PATCH as patchCategoryGroup,
+  DELETE as deleteCategoryGroup
+} from "@/app/api/category-groups/[id]/route";
+import {
+  PATCH as patchIncomeEarner,
+  DELETE as deleteIncomeEarner
+} from "@/app/api/income-earners/[id]/route";
+import {
+  PATCH as patchBudgetItem,
+  DELETE as deleteBudgetItem
+} from "@/app/api/budget-items/[id]/route";
+import {
+  PATCH as patchTransfer,
+  DELETE as deleteTransfer
+} from "@/app/api/transfers/[id]/route";
+import {
+  PATCH as patchAsset,
+  DELETE as deleteAsset
+} from "@/app/api/assets/[id]/route";
+import {
+  PATCH as patchProjection,
+  DELETE as deleteProjection
+} from "@/app/api/investment-projections/[id]/route";
 import { POST as switchHousehold } from "@/app/api/household/switch/route";
+import { PATCH as patchAdminAuth } from "@/app/api/admin/config/auth/route";
+import { POST as requestPasswordReset } from "@/app/api/auth/reset-password/request/route";
+import { POST as completePasswordReset } from "@/app/api/auth/reset-password/complete/route";
+import { POST as requestEmailVerification } from "@/app/api/auth/verify-email/request/route";
+import { POST as consumeEmailVerification } from "@/app/api/auth/verify-email/[token]/route";
+import { randomToken, sha256Hex } from "@/lib/crypto";
+import { verifyPassword } from "@/lib/auth";
 
 const cookieState = vi.hoisted(() => ({
   values: new Map<string, string>(),
@@ -23,6 +59,10 @@ vi.mock("next/headers", () => ({
       cookieState.writes.push({ name: cookie.name, value: cookie.value });
     }
   })
+}));
+
+vi.mock("@/lib/mailer", () => ({
+  sendMail: async () => ({ delivered: true })
 }));
 
 async function resetDatabase() {
@@ -106,12 +146,189 @@ async function seedAccessScenario() {
     })
   ]);
 
-  const [aliceAccount, bobAccount] = await Promise.all([
+  const [aliceAccount, aliceSavings, bobAccount, bobSavings] = await Promise.all([
     prisma.bankAccount.create({
-      data: { householdId: alicePrimary.id, name: "Alice checking" }
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice checking",
+        currencies: {
+          create: [{ currency: "CHF", openingBalance: "100", currentBalance: "100" }]
+        }
+      }
     }),
     prisma.bankAccount.create({
-      data: { householdId: bobHousehold.id, name: "Bob checking" }
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice savings",
+        currencies: {
+          create: [{ currency: "CHF", openingBalance: "0", currentBalance: "0" }]
+        }
+      }
+    }),
+    prisma.bankAccount.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob checking",
+        currencies: {
+          create: [{ currency: "USD", openingBalance: "100", currentBalance: "100" }]
+        }
+      }
+    }),
+    prisma.bankAccount.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob savings",
+        currencies: {
+          create: [{ currency: "USD", openingBalance: "0", currentBalance: "0" }]
+        }
+      }
+    })
+  ]);
+
+  const [aliceGroup, bobGroup] = await Promise.all([
+    prisma.categoryGroup.create({
+      data: { householdId: alicePrimary.id, name: "Alice group" }
+    }),
+    prisma.categoryGroup.create({
+      data: { householdId: bobHousehold.id, name: "Bob group" }
+    })
+  ]);
+  const [aliceCategory, bobCategory] = await Promise.all([
+    prisma.category.create({
+      data: {
+        householdId: alicePrimary.id,
+        groupId: aliceGroup.id,
+        name: "Alice category",
+        type: "expense"
+      }
+    }),
+    prisma.category.create({
+      data: {
+        householdId: bobHousehold.id,
+        groupId: bobGroup.id,
+        name: "Bob category",
+        type: "expense"
+      }
+    })
+  ]);
+  const [aliceEarner, bobEarner] = await Promise.all([
+    prisma.incomeEarner.create({
+      data: { householdId: alicePrimary.id, name: "Alice earner" }
+    }),
+    prisma.incomeEarner.create({
+      data: { householdId: bobHousehold.id, name: "Bob earner" }
+    })
+  ]);
+  const [aliceBudgetItem, bobBudgetItem] = await Promise.all([
+    prisma.budgetLineItem.create({
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice rent",
+        itemType: "expense",
+        amount: "1200",
+        currency: "CHF",
+        recurrence: "monthly",
+        startDate: new Date("2026-01-01T00:00:00Z"),
+        categoryId: aliceCategory.id,
+        accountId: aliceAccount.id,
+        incomeEarnerId: aliceEarner.id
+      }
+    }),
+    prisma.budgetLineItem.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob rent",
+        itemType: "expense",
+        amount: "1500",
+        currency: "USD",
+        recurrence: "monthly",
+        startDate: new Date("2026-01-01T00:00:00Z"),
+        categoryId: bobCategory.id,
+        accountId: bobAccount.id,
+        incomeEarnerId: bobEarner.id
+      }
+    })
+  ]);
+  const [aliceTransfer, bobTransfer] = await Promise.all([
+    prisma.scheduledTransfer.create({
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice transfer",
+        sourceAccountId: aliceAccount.id,
+        sourceCurrency: "CHF",
+        targetAccountId: aliceSavings.id,
+        targetCurrency: "CHF",
+        amount: "100",
+        recurrence: "monthly",
+        startDate: new Date("2026-01-01T00:00:00Z")
+      }
+    }),
+    prisma.scheduledTransfer.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob transfer",
+        sourceAccountId: bobAccount.id,
+        sourceCurrency: "USD",
+        targetAccountId: bobSavings.id,
+        targetCurrency: "USD",
+        amount: "100",
+        recurrence: "monthly",
+        startDate: new Date("2026-01-01T00:00:00Z")
+      }
+    })
+  ]);
+  const [aliceAsset, bobAsset] = await Promise.all([
+    prisma.asset.create({
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice asset",
+        category: "other",
+        value: "500",
+        currency: "CHF",
+        annualAppreciationRate: "0"
+      }
+    }),
+    prisma.asset.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob asset",
+        category: "other",
+        value: "500",
+        currency: "USD",
+        annualAppreciationRate: "0"
+      }
+    })
+  ]);
+  const [aliceProjection, bobProjection] = await Promise.all([
+    prisma.investmentProjection.create({
+      data: {
+        householdId: alicePrimary.id,
+        name: "Alice projection",
+        startingCapital: "1000",
+        currency: "CHF",
+        recurringContribution: "100",
+        contributionFrequency: "monthly",
+        expectedAnnualReturn: "0.04",
+        annualFeeDrag: "0",
+        inflationRate: "0",
+        horizonYears: 10,
+        accountId: aliceAccount.id
+      }
+    }),
+    prisma.investmentProjection.create({
+      data: {
+        householdId: bobHousehold.id,
+        name: "Bob projection",
+        startingCapital: "1000",
+        currency: "USD",
+        recurringContribution: "100",
+        contributionFrequency: "monthly",
+        expectedAnnualReturn: "0.04",
+        annualFeeDrag: "0",
+        inflationRate: "0",
+        horizonYears: 10,
+        accountId: bobAccount.id
+      }
     })
   ]);
 
@@ -126,7 +343,23 @@ async function seedAccessScenario() {
     aliceSecondMember,
     bobMember,
     aliceAccount,
+    aliceSavings,
     bobAccount,
+    bobSavings,
+    aliceGroup,
+    bobGroup,
+    aliceCategory,
+    bobCategory,
+    aliceEarner,
+    bobEarner,
+    aliceBudgetItem,
+    bobBudgetItem,
+    aliceTransfer,
+    bobTransfer,
+    aliceAsset,
+    bobAsset,
+    aliceProjection,
+    bobProjection,
     aliceToken: aliceSession.token,
     bobToken: bobSession.token
   };
@@ -140,7 +373,35 @@ function setCookies(values: Record<string, string | undefined>) {
   }
 }
 
-describe("v0.6 household access controls", () => {
+type IdRouteHandler = (
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) => Promise<Response>;
+
+function jsonRequest(url: string, method: string, body?: unknown): NextRequest {
+  return new NextRequest(url, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.10"
+    },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+}
+
+async function callIdRoute(
+  handler: IdRouteHandler,
+  method: "PATCH" | "DELETE",
+  id: string,
+  body?: unknown,
+  suffix = ""
+) {
+  return handler(jsonRequest(`http://localhost/api/test/${id}${suffix}`, method, body), {
+    params: Promise.resolve({ id })
+  });
+}
+
+describe("v0.7 auth and access controls", () => {
   beforeEach(async () => {
     await resetDatabase();
     setCookies({});
@@ -161,7 +422,9 @@ describe("v0.6 household access controls", () => {
     const res = await getHousehold();
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.id).toBe(fixture.alicePrimary.id);
+    expect([fixture.alicePrimary.id, fixture.aliceSecond.id]).toContain(
+      body.id
+    );
     expect(body.id).not.toBe(fixture.bobHousehold.id);
   });
 
@@ -221,5 +484,233 @@ describe("v0.6 household access controls", () => {
       where: { id: fixture.bobAccount.id }
     });
     expect(account.name).toBe("Bob checking");
+  });
+
+  it("rejects cross-tenant PATCH across protected mutable resources", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const cases: Array<[string, IdRouteHandler, string, unknown]> = [
+      ["account", patchAccount, fixture.bobAccount.id, { name: "Taken" }],
+      ["category", patchCategory, fixture.bobCategory.id, { name: "Taken" }],
+      [
+        "category group",
+        patchCategoryGroup,
+        fixture.bobGroup.id,
+        { name: "Taken" }
+      ],
+      [
+        "income earner",
+        patchIncomeEarner,
+        fixture.bobEarner.id,
+        { name: "Taken" }
+      ],
+      ["budget item", patchBudgetItem, fixture.bobBudgetItem.id, { name: "Taken" }],
+      ["transfer", patchTransfer, fixture.bobTransfer.id, { name: "Taken" }],
+      ["asset", patchAsset, fixture.bobAsset.id, { name: "Taken" }],
+      ["projection", patchProjection, fixture.bobProjection.id, { name: "Taken" }]
+    ];
+
+    for (const [name, handler, id, body] of cases) {
+      const res = await callIdRoute(handler, "PATCH", id, body);
+      expect(res.status, name).toBe(404);
+    }
+  });
+
+  it("rejects cross-tenant DELETE before reference checks can leak row existence", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const cases: Array<[string, IdRouteHandler, string]> = [
+      ["account", deleteAccount, fixture.bobAccount.id],
+      ["category", deleteCategory, fixture.bobCategory.id],
+      ["category group", deleteCategoryGroup, fixture.bobGroup.id],
+      ["income earner", deleteIncomeEarner, fixture.bobEarner.id],
+      ["budget item", deleteBudgetItem, fixture.bobBudgetItem.id],
+      ["transfer", deleteTransfer, fixture.bobTransfer.id],
+      ["asset", deleteAsset, fixture.bobAsset.id],
+      ["projection", deleteProjection, fixture.bobProjection.id]
+    ];
+
+    for (const [name, handler, id] of cases) {
+      const res = await callIdRoute(handler, "DELETE", id, undefined, "?force=true");
+      expect(res.status, name).toBe(404);
+    }
+  });
+
+  it("rejects attaching owned resources to foreign-key rows from another household", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const cases: Array<[string, IdRouteHandler, string, unknown]> = [
+      [
+        "category group",
+        patchCategory,
+        fixture.aliceCategory.id,
+        { groupId: fixture.bobGroup.id }
+      ],
+      [
+        "budget category",
+        patchBudgetItem,
+        fixture.aliceBudgetItem.id,
+        { categoryId: fixture.bobCategory.id }
+      ],
+      [
+        "budget account",
+        patchBudgetItem,
+        fixture.aliceBudgetItem.id,
+        { accountId: fixture.bobAccount.id }
+      ],
+      [
+        "budget earner",
+        patchBudgetItem,
+        fixture.aliceBudgetItem.id,
+        { incomeEarnerId: fixture.bobEarner.id }
+      ],
+      [
+        "transfer source",
+        patchTransfer,
+        fixture.aliceTransfer.id,
+        { sourceAccountId: fixture.bobAccount.id }
+      ],
+      [
+        "projection account",
+        patchProjection,
+        fixture.aliceProjection.id,
+        { accountId: fixture.bobAccount.id }
+      ]
+    ];
+
+    for (const [name, handler, id, body] of cases) {
+      const res = await callIdRoute(handler, "PATCH", id, body);
+      expect(res.status, name).toBe(404);
+    }
+  });
+
+  it("rejects admin config updates from non-admin users", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const res = await patchAdminAuth(
+      jsonRequest("http://localhost/api/admin/config/auth", "PATCH", {
+        sessionTtlDays: 7
+      })
+    );
+
+    expect(res.status).toBe(403);
+  });
+
+  it("rate-limits password reset requests by IP", async () => {
+    const fixture = await seedAccessScenario();
+
+    for (let i = 0; i < 5; i++) {
+      const res = await requestPasswordReset(
+        jsonRequest("http://localhost/api/auth/reset-password/request", "POST", {
+          email: "alice@example.test"
+        })
+      );
+      expect(res.status).toBe(200);
+    }
+
+    const limited = await requestPasswordReset(
+      jsonRequest("http://localhost/api/auth/reset-password/request", "POST", {
+        email: fixture.alicePrimary.id.replace(/./g, "a") + "@example.test"
+      })
+    );
+    expect(limited.status).toBe(429);
+  });
+
+  it("rate-limits verification email requests by user and IP", async () => {
+    const fixture = await seedAccessScenario();
+    await prisma.user.update({
+      where: { email: "alice@example.test" },
+      data: { emailVerifiedAt: null }
+    });
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    for (let i = 0; i < 5; i++) {
+      const res = await requestEmailVerification(
+        jsonRequest("http://localhost/api/auth/verify-email/request", "POST")
+      );
+      expect(res.status).toBe(200);
+    }
+
+    const limited = await requestEmailVerification(
+      jsonRequest("http://localhost/api/auth/verify-email/request", "POST")
+    );
+    expect(limited.status).toBe(429);
+  });
+
+  it("consumes password reset tokens once and revokes existing sessions", async () => {
+    const fixture = await seedAccessScenario();
+    const token = randomToken(32);
+    await prisma.passwordResetToken.create({
+      data: {
+        tokenHash: sha256Hex(token),
+        userId: (await prisma.user.findUniqueOrThrow({
+          where: { email: "alice@example.test" },
+          select: { id: true }
+        })).id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+      }
+    });
+
+    const res = await completePasswordReset(
+      jsonRequest("http://localhost/api/auth/reset-password/complete", "POST", {
+        token,
+        password: "new correct horse battery"
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const second = await completePasswordReset(
+      jsonRequest("http://localhost/api/auth/reset-password/complete", "POST", {
+        token,
+        password: "another correct horse"
+      })
+    );
+    expect(second.status).toBe(400);
+
+    expect(await prisma.session.count({ where: { tokenHash: sha256Hex(fixture.aliceToken) } })).toBe(0);
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { email: "alice@example.test" }
+    });
+    expect(await verifyPassword("new correct horse battery", user.passwordHash)).toBe(true);
+  });
+
+  it("consumes email verification tokens once", async () => {
+    const fixture = await seedAccessScenario();
+    const token = randomToken(32);
+    const user = await prisma.user.update({
+      where: { email: "alice@example.test" },
+      data: { emailVerifiedAt: null },
+      select: { id: true }
+    });
+    await prisma.emailVerificationToken.create({
+      data: {
+        tokenHash: sha256Hex(token),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+      }
+    });
+
+    const res = await consumeEmailVerification(
+      jsonRequest(`http://localhost/api/auth/verify-email/${token}`, "POST"),
+      { params: Promise.resolve({ token }) }
+    );
+    expect(res.status).toBe(200);
+
+    const second = await consumeEmailVerification(
+      jsonRequest(`http://localhost/api/auth/verify-email/${token}`, "POST"),
+      { params: Promise.resolve({ token }) }
+    );
+    expect(second.status).toBe(400);
+
+    const verified = await prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: { emailVerifiedAt: true }
+    });
+    expect(verified.emailVerifiedAt).not.toBeNull();
+    expect(fixture.aliceToken).toBeTruthy();
   });
 });

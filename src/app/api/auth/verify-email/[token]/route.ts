@@ -24,6 +24,7 @@ export async function POST(
     }
     const ipHash = ipHashFromHeaders(req.headers);
     const tokenHash = sha256Hex(token);
+    const now = new Date();
 
     const row = await prisma.emailVerificationToken.findUnique({
       where: { tokenHash },
@@ -31,20 +32,23 @@ export async function POST(
     });
     if (!row) return jsonError("Invalid or expired link", 400);
     if (row.consumedAt) return jsonError("Link already used", 400);
-    if (row.expiresAt.getTime() < Date.now()) {
+    if (row.expiresAt < now) {
       return jsonError("Link has expired — request a new one", 400);
     }
 
-    await prisma.$transaction([
-      prisma.user.update({
+    const consumed = await prisma.$transaction(async (tx) => {
+      const updated = await tx.emailVerificationToken.updateMany({
+        where: { id: row.id, consumedAt: null, expiresAt: { gte: now } },
+        data: { consumedAt: now }
+      });
+      if (updated.count !== 1) return false;
+      await tx.user.update({
         where: { id: row.userId },
-        data: { emailVerifiedAt: new Date() }
-      }),
-      prisma.emailVerificationToken.update({
-        where: { id: row.id },
-        data: { consumedAt: new Date() }
-      })
-    ]);
+        data: { emailVerifiedAt: now }
+      });
+      return true;
+    });
+    if (!consumed) return jsonError("Invalid or expired link", 400);
 
     await writeAudit({
       action: "email_verified",

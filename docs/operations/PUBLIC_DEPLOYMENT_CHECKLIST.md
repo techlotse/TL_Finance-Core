@@ -16,7 +16,7 @@ Required production shape:
 | TLS | Real certificate at the public reverse proxy |
 | Mail | SMTP configured and tested for reset + verification delivery |
 | Backups | `pg_dump` backup path writable, manual run tested, restore tested |
-| CI | Node 24-compatible GitHub Actions, typecheck, lint, unit tests, readiness check, migration deploy, build |
+| CI | Node 24-compatible GitHub Actions, typecheck, lint, unit tests, readiness check, production dependency audit, migration deploy, auth/access integration tests, build |
 | Secrets | `APP_SECRET`, DB, replication, Redis, and PgAdmin passwords replaced |
 
 ## Configuration
@@ -48,7 +48,8 @@ Preflight:
 6. Start the compose stack with real `.env` values.
 7. Confirm `GET /api/health` returns `200`.
 8. Create the first admin user.
-9. Configure SMTP and send verification + reset mails.
+9. Configure SMTP, send the built-in test email, and send verification + reset
+   mails.
 10. Enable backups and run an admin-triggered backup.
 11. Restore that backup into a disposable database.
 12. Sign in, complete onboarding, export household JSON, import into a test household.
@@ -59,9 +60,9 @@ Public alpha acceptance:
 
 | Area | Must pass |
 | --- | --- |
-| Auth | Signup, signin, signout, password reset, and email verification |
+| Auth | Signup, signin, signout, password reset, email verification, and SMTP test mail |
 | Access | Unverified users cannot reach app pages or non-auth APIs |
-| Tenant isolation | Protected API routes resolve an active household or admin guard |
+| Tenant isolation | Protected API routes resolve an active household or admin guard; forged active-household cookies, cross-tenant mutations/deletes, and FK ownership attempts are covered by integration tests |
 | Operations | Backups write `.sql.gz` files and restore successfully |
 | Release | Docker image build runs after CI verification; Docker Hub publish runs only when credentials are configured |
 

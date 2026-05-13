@@ -17,8 +17,8 @@ Release plan:
 | Version | Scope |
 | --- | --- |
 | v0.5.0 | Current public handoff baseline |
-| v0.6.0 | User separation and in-app authentication refinement |
-| v0.7.0 | Authentication and access security hardening |
+| v0.6.0 | User separation, active-household selection, and access tests |
+| v0.7.0 | Authentication, reset/verification, rate-limit, admin, and access security hardening |
 | v0.8.0 | Public alpha, HA deployment, payment provider for SaaS version |
 | v0.9.0 | Bug fixes and public beta readiness |
 | v1.0.0 | Stable public release with the v0.5.0 feature set preserved |

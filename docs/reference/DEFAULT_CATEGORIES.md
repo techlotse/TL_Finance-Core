@@ -16,8 +16,8 @@ Supported preset keys:
 | --- | --- |
 | `swiss` | Swiss-oriented English preset with local finance terms |
 | `generic` | General English household preset |
-| `german` | Falls back to generic in v0.5.0 |
-| `french` | Falls back to generic in v0.5.0 |
+| `german` | Currently falls back to generic |
+| `french` | Currently falls back to generic |
 
 Categories are created under household-scoped category groups. Users can rename
 or remove them later.
@@ -25,8 +25,9 @@ or remove them later.
 ## Configuration
 
 The onboarding wizard sends the selected preset to `POST /api/onboarding`.
-Default base currency is CHF, but the household can choose any supported ISO
-currency before the preset is applied.
+Settings uses the same preset shape when creating an additional household via
+`POST /api/household/create`. Default base currency is CHF, but the household
+can choose any supported ISO currency before the preset is applied.
 
 ## Deployment
 

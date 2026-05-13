@@ -29,14 +29,53 @@ branch, SHA, semver, and latest tags when configured with Docker Hub secrets.
 
 ## Unreleased
 
+No public changes yet.
+
+## v0.7.0 - 2026-05-13
+
+Authentication and access security hardening.
+
+Changed:
+
+- Added configurable hourly rate limits for password reset requests and email
+  verification resend requests.
+- Made password reset and email verification token consumption atomic and
+  single-use under concurrent requests.
+- Revoked all existing user sessions inside the password-reset completion
+  transaction.
+- Hardened account, category, category-group, and income-earner delete routes
+  so ownership is checked before reference counts, preventing foreign-row
+  existence leaks through conflict responses.
+- Added foreign-key ownership enforcement to investment-projection PATCH.
+- Expanded DB-backed auth/access integration coverage to cross-tenant PATCH and
+  DELETE matrices, foreign-key attachment attempts, admin role enforcement,
+  auth rate limits, reset token reuse, verification token reuse, and session
+  revocation.
+
+## v0.6.0 - 2026-05-12
+
 Public-deployment hardening after the v0.5.0 handoff.
 
 Changed:
 
+- Added explicit active-household selection in desktop and mobile navigation.
+- Added household membership management in Settings, including creation of
+  additional owner households from the onboarding preset schema.
+- Added `GET /api/household/list` and `POST /api/household/create` alongside
+  the validated household switch endpoint.
+- Added DB-backed access-control integration tests for forged active-household
+  cookies, cross-user household switching, valid own-household switching, and
+  cross-tenant account mutation rejection.
+- Added a dedicated Vitest integration config and CI step for the access suite.
+- Added production SMTP controls for explicit TLS mode, verified From address,
+  sealed password refresh, and admin-triggered test email delivery.
 - Added locked npm dependency installation with `package-lock.json`.
 - Added CI verification before Docker publish: install, Prisma generate,
-  typecheck, lint, unit tests, readiness checks, migration deploy, and build.
+  typecheck, lint, unit tests, readiness checks, migration deploy, access tests,
+  and build.
 - Upgraded GitHub workflow actions to Node 24-compatible major versions.
+- Upgraded Next.js to 15.5.18 to clear production npm audit findings while
+  staying on the locked Next.js 15 stack.
 - Upgraded Prisma ORM to 7.8.0 with `prisma.config.ts`, generated client
   output under `src/generated/prisma`, and the PostgreSQL driver adapter.
 - Made Docker Hub publish conditional on configured Docker Hub credentials while

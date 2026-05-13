@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes how to run TL Finance Core v0.5.0 locally, in Docker,
+This document describes how to run TL Finance Core v0.7.0 locally, in Docker,
 and in the bundled multinode Docker Desktop topology.
 
 ## Architecture
@@ -102,8 +102,20 @@ Backups:
 - Restore every public-release backup into a disposable database before
   trusting the deployment.
 
+Mail:
+
+- Configure SMTP in Admin -> Mail after first login.
+- Use port 587 with "Require STARTTLS" for most hosted SMTP providers, or port
+  465 with "Implicit TLS / SSL" when the provider documents implicit TLS.
+- Set From email to the verified sender address required by the provider.
+- Send the built-in test email before enabling required email verification or
+  relying on password reset delivery.
+
 ## Troubleshooting
 
+- If the SMTP test fails, confirm the provider allows SMTP password/app-password
+  authentication for the configured user and that the From email is an allowed
+  sender.
 - If Postgres fails to initialize in multinode, verify `docker-compose-multinode.yml`
   still uses YAML list form for the primary `command`.
 - If nginx returns 502, check `app-1` and `app-2` health checks.

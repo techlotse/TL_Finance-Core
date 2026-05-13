@@ -8,6 +8,7 @@ import { loadAdminConfig } from "@/lib/admin-config";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/logger";
 import { sendMail } from "@/lib/mailer";
+import { assertAuditRateLimit } from "@/lib/rate-limit";
 
 const RESET_TTL_HOURS = 2;
 
@@ -24,6 +25,13 @@ export async function POST(req: NextRequest) {
     const body = requestPasswordResetSchema.parse(await req.json());
     const email = normaliseEmail(body.email);
     const ipHash = ipHashFromHeaders(req.headers);
+    await assertAuditRateLimit({
+      action: "password_reset_request",
+      ipHash,
+      windowMs: 60 * 60 * 1000,
+      max: cfg.authConfig.maxPasswordResetRequestsPerHour,
+      message: "Too many password-reset requests — please try again later"
+    });
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {

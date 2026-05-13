@@ -2,7 +2,12 @@ import { NextRequest } from "next/server";
 import { handleApiError, jsonOk } from "@/lib/api";
 import { adminMailConfigPatchSchema } from "@/lib/schemas";
 import { requireAdminApi } from "@/lib/admin-guard";
-import { saveMailConfig, sealSecret, type MailConfig } from "@/lib/admin-config";
+import {
+  loadPublicAdminConfig,
+  saveMailConfig,
+  sealSecret,
+  type MailConfig
+} from "@/lib/admin-config";
 import { writeAudit } from "@/lib/audit";
 import { ipHashFromHeaders } from "@/lib/auth";
 
@@ -17,6 +22,9 @@ export async function PATCH(req: NextRequest) {
     if (body.provider !== undefined) patch.provider = body.provider;
     if (body.smtpHost !== undefined) patch.smtpHost = body.smtpHost ?? undefined;
     if (body.smtpPort !== undefined) patch.smtpPort = body.smtpPort ?? undefined;
+    if (body.smtpTlsMode !== undefined) {
+      patch.smtpTlsMode = body.smtpTlsMode ?? undefined;
+    }
     if (body.smtpUser !== undefined) patch.smtpUser = body.smtpUser ?? undefined;
     if (body.fromName !== undefined) patch.fromName = body.fromName ?? undefined;
     if (body.fromEmail !== undefined) patch.fromEmail = body.fromEmail ?? undefined;
@@ -25,11 +33,8 @@ export async function PATCH(req: NextRequest) {
       patch.smtpPasswordCipher = sealed ?? undefined;
     }
 
-    const next = await saveMailConfig(patch);
-
-    // Don't echo the cipher back over the wire — admin UI re-loads via the
-    // public-safe loader.
-    const safe = { ...next, smtpPasswordCipher: undefined };
+    await saveMailConfig(patch);
+    const next = await loadPublicAdminConfig();
 
     await writeAudit({
       action: "admin_config_update",
@@ -42,7 +47,7 @@ export async function PATCH(req: NextRequest) {
         passwordRotated: body.smtpPassword !== undefined
       }
     });
-    return jsonOk({ ok: true, value: safe });
+    return jsonOk({ ok: true, value: next.mailConfig });
   } catch (err) {
     return handleApiError(err);
   }

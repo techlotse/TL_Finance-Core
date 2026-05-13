@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Send } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,6 +17,7 @@ interface MailConfig {
   provider: "smtp" | "none";
   smtpHost?: string;
   smtpPort?: number;
+  smtpTlsMode?: "auto" | "ssl" | "starttls" | "none";
   smtpUser?: string;
   fromName?: string;
   fromEmail?: string;
@@ -27,17 +29,21 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
   const [cfg, setCfg] = useState(initial);
   const [newPassword, setNewPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [testBusy, setTestBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  async function save() {
+  async function save(): Promise<boolean> {
     setBusy(true);
     setError(null);
+    setTestResult(null);
     try {
       const payload: Record<string, unknown> = {
         provider: cfg.provider,
         smtpHost: cfg.smtpHost ?? null,
         smtpPort: cfg.smtpPort ?? null,
+        smtpTlsMode: cfg.smtpTlsMode ?? null,
         smtpUser: cfg.smtpUser ?? null,
         fromName: cfg.fromName ?? null,
         fromEmail: cfg.fromEmail ?? null
@@ -52,12 +58,44 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Save failed");
+      if (json.value) setCfg(json.value);
       setSavedAt(new Date());
       setNewPassword("");
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
+      return false;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendTest() {
+    setTestBusy(true);
+    setError(null);
+    setTestResult(null);
+    try {
+      if (newPassword.trim()) {
+        throw new Error("Save the SMTP password before sending a test email.");
+      }
+      const res = await fetch("/api/admin/config/mail/test", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({})
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          json.details?.reason
+            ? `Test email failed: ${json.details.reason}`
+            : json.error || "Test email failed"
+        );
+      }
+      setTestResult(`Test email sent to ${json.to}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Test email failed");
+    } finally {
+      setTestBusy(false);
     }
   }
 
@@ -109,6 +147,24 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
                 />
               </FormField>
             </div>
+            <FormField label="TLS mode" htmlFor="tls">
+              <select
+                id="tls"
+                value={cfg.smtpTlsMode ?? "auto"}
+                onChange={(e) =>
+                  setCfg({
+                    ...cfg,
+                    smtpTlsMode: e.target.value as MailConfig["smtpTlsMode"]
+                  })
+                }
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                <option value="auto">Auto (465 SSL, 587 STARTTLS)</option>
+                <option value="starttls">Require STARTTLS</option>
+                <option value="ssl">Implicit TLS / SSL</option>
+                <option value="none">No TLS</option>
+              </select>
+            </FormField>
             <FormField label="SMTP user" htmlFor="user">
               <Input
                 id="user"
@@ -156,13 +212,24 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
         )}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
+        {testResult && <p className="text-sm text-success">{testResult}</p>}
         {savedAt && (
           <p className="text-xs text-muted-foreground">
             Saved {savedAt.toLocaleTimeString()}.
           </p>
         )}
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={busy}>
+        <div className="flex flex-wrap justify-end gap-2">
+          {cfg.provider === "smtp" && (
+            <Button
+              variant="secondary"
+              onClick={sendTest}
+              disabled={busy || testBusy}
+            >
+              <Send className="mr-2 size-4" />
+              {testBusy ? "Sending…" : "Send test email"}
+            </Button>
+          )}
+          <Button onClick={() => void save()} disabled={busy || testBusy}>
             {busy ? "Saving…" : "Save changes"}
           </Button>
         </div>

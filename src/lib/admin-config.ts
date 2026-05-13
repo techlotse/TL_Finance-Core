@@ -13,12 +13,15 @@ export interface AuthConfig {
   emailVerificationRequired: boolean;
   sessionTtlDays: number;
   maxFailedSignins: number;
+  maxPasswordResetRequestsPerHour: number;
+  maxEmailVerificationRequestsPerHour: number;
 }
 
 export interface MailConfig {
   provider: "smtp" | "none";
   smtpHost?: string;
   smtpPort?: number;
+  smtpTlsMode?: "auto" | "ssl" | "starttls" | "none";
   smtpUser?: string;
   smtpPasswordCipher?: string;
   fromName?: string;
@@ -62,7 +65,9 @@ const DEFAULT_AUTH: AuthConfig = {
   signupEnabled: true,
   emailVerificationRequired: false,
   sessionTtlDays: 30,
-  maxFailedSignins: 10
+  maxFailedSignins: 10,
+  maxPasswordResetRequestsPerHour: 5,
+  maxEmailVerificationRequestsPerHour: 5
 };
 const DEFAULT_MAIL: MailConfig = { provider: "none" };
 const DEFAULT_BACKUP: BackupConfig = { enabled: false };

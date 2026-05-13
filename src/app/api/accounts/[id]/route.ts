@@ -111,6 +111,12 @@ export async function DELETE(
     const url = new URL(req.url);
     const force = url.searchParams.get("force") === "true";
 
+    const found = await prisma.bankAccount.findFirst({
+      where: { id, householdId },
+      select: { id: true }
+    });
+    if (!found) throw new OwnershipError("Account not found", 404);
+
     if (force) {
       // Refuse if any budget item or transfer still references this account —
       // otherwise we lose history. The user can reassign first or fall back
@@ -130,10 +136,9 @@ export async function DELETE(
           409
         );
       }
-      const result = await prisma.bankAccount.deleteMany({
+      await prisma.bankAccount.deleteMany({
         where: { id, householdId }
       });
-      if (result.count === 0) throw new OwnershipError("Account not found", 404);
 
       await writeAudit({
         action: "delete",

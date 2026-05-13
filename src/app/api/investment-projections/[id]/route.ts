@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { handleApiError, jsonOk, serialize } from "@/lib/api";
 import { investmentProjectionPatchSchema } from "@/lib/schemas";
 import { getActiveHouseholdId } from "@/lib/household";
-import { OwnershipError } from "@/lib/ownership";
+import { OwnershipError, assertAccountOwnership } from "@/lib/ownership";
 import { writeAudit } from "@/lib/audit";
 import { ipHashFromHeaders } from "@/lib/auth";
 
@@ -15,6 +15,10 @@ export async function PATCH(
     const householdId = await getActiveHouseholdId();
     const { id } = await params;
     const body = investmentProjectionPatchSchema.parse(await req.json());
+
+    if (body.accountId) {
+      await assertAccountOwnership(householdId, body.accountId);
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       const found = await tx.investmentProjection.findFirst({

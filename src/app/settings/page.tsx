@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getActiveHouseholdForPage } from "@/lib/page-auth";
+import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import {
   HouseholdSettingsForm,
@@ -24,10 +24,9 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const ctx = await requirePageSession("/settings");
-  if (!ctx.membership) {
-    await getActiveHouseholdForPage("/settings");
-  }
-  const household = ctx.membership!.household;
+  const membership = ctx.membership;
+  if (!membership) redirect("/onboarding");
+  const household = membership.household;
   const [earners, groups, latestRate] = await Promise.all([
     prisma.incomeEarner.findMany({
       where: { householdId: household.id, deletedAt: null },
@@ -65,7 +64,7 @@ export default async function SettingsPage() {
               }}
             />
             <HouseholdMembershipsCard
-              activeMembershipId={ctx.membership.id}
+              activeMembershipId={membership.id}
               memberships={ctx.memberships.map((m) => ({
                 id: m.id,
                 householdName: m.household.name,
