@@ -1,6 +1,6 @@
 # TL Finance Core - Repository Overview
 
-[![Docker Build](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml)
+[![Docker Build](https://github.com/techlotse/TL_Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL_Finance-Core/actions/workflows/docker-publish.yml)
 [![Version](https://img.shields.io/badge/version-0.7.0-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.0)
 [![License](https://img.shields.io/badge/license-Source%20Available-00D1C7)](./LICENSE)
 
