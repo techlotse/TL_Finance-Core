@@ -3,11 +3,12 @@
 ## Purpose
 
 This guide explains how an instance user sets up and operates TL Finance Core
-v0.5.0.
+v0.7.0.
 
 ## Architecture
 
-The user-facing product is organized around one active household:
+The user-facing product is organized around one active household selected from
+the signed-in user's memberships:
 
 ```text
 Onboarding -> Dashboard
@@ -46,12 +47,18 @@ Core workflows:
 6. Use Debt to inspect credit account payoff behavior.
 7. Use Forecast to inspect net worth and account-level movement.
 8. Use Investments to model long-term contribution scenarios.
-9. Export household JSON in Settings before destructive import or major changes.
+9. Switch between households from the navigation or Settings when the user has
+   more than one membership.
+10. Create additional households from Settings when a separate finance context
+    is needed.
+11. Export household JSON in Settings before destructive import or major
+    changes.
 
 Admin workflows:
 
-1. Configure registration and session policy.
-2. Configure SMTP values, then test password reset and verification delivery.
+1. Configure registration, session policy, and auth rate limits.
+2. Configure SMTP values, send the built-in test email, then test password
+   reset and verification delivery.
 3. Enable backups, run a manual backup, and test restore before public use.
 4. Review audit events and prune old entries according to retention policy.
 

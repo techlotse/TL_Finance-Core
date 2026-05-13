@@ -3,7 +3,7 @@
 ## Purpose
 
 This document records the current PostgreSQL schema shape and migration policy
-for TL Finance Core v0.5.0.
+for TL Finance Core v0.7.0.
 
 ## Architecture
 
@@ -18,6 +18,7 @@ Applied migrations:
 | `20260428200000_auth` | Users, sessions, household memberships, tokens, audit log, admin config |
 | `20260429120000_balance_snapshots` | Account balance snapshot support |
 | `20260429140000_assets_and_account_extensions` | Assets, investment-account fields, debt-account fields |
+| `20260502100000_product_tiers_and_ai_config` | Product tier and AI provider configuration |
 
 Schema highlights:
 

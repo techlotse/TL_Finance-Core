@@ -89,6 +89,177 @@ export function HouseholdSettingsForm({
   );
 }
 
+interface HouseholdMembership {
+  id: string;
+  householdName: string;
+  baseCurrency: string;
+  role: string;
+}
+
+export function HouseholdMembershipsCard({
+  memberships,
+  activeMembershipId
+}: {
+  memberships: HouseholdMembership[];
+  activeMembershipId: string;
+}) {
+  const router = useRouter();
+  const [creating, setCreating] = React.useState(false);
+  const [switchingId, setSwitchingId] = React.useState<string | null>(null);
+  const [form, setForm] = React.useState({
+    householdName: "",
+    baseCurrency: "CHF",
+    earnerName: "",
+    categoryPreset: "swiss"
+  });
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function switchHousehold(membershipId: string) {
+    setSwitchingId(membershipId);
+    setError(null);
+    try {
+      const res = await fetch("/api/household/switch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ membershipId })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not switch household");
+    } finally {
+      setSwitchingId(null);
+    }
+  }
+
+  async function createHousehold() {
+    if (!form.householdName.trim() || !form.earnerName.trim()) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/household/create", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          householdName: form.householdName.trim(),
+          baseCurrency: form.baseCurrency.toUpperCase(),
+          earners: [{ name: form.earnerName.trim() }],
+          categoryPreset: form.categoryPreset
+        })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Request failed (${res.status})`);
+      }
+      setForm({
+        householdName: "",
+        baseCurrency: "CHF",
+        earnerName: "",
+        categoryPreset: "swiss"
+      });
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create household");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Household access</CardTitle>
+        <CardDescription>
+          Memberships available to this signed-in user.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="divide-y divide-border rounded-md border border-border">
+          {memberships.map((m) => {
+            const active = m.id === activeMembershipId;
+            return (
+              <div
+                key={m.id}
+                className="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{m.householdName}</span>
+                    {active && <Badge variant="success">Active</Badge>}
+                    <Badge variant="outline">{m.role}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Base currency {m.baseCurrency}
+                  </p>
+                </div>
+                <Button
+                  variant={active ? "ghost" : "outline"}
+                  size="sm"
+                  disabled={active || switchingId === m.id}
+                  onClick={() => switchHousehold(m.id)}
+                >
+                  {switchingId === m.id ? "Switching..." : "Switch"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2">
+          <FormField label="New household">
+            <Input
+              value={form.householdName}
+              onChange={(e) =>
+                setForm({ ...form, householdName: e.target.value })
+              }
+              placeholder="e.g. Side household"
+            />
+          </FormField>
+          <FormField label="Base currency">
+            <Input
+              value={form.baseCurrency}
+              onChange={(e) =>
+                setForm({ ...form, baseCurrency: e.target.value.toUpperCase() })
+              }
+              maxLength={3}
+            />
+          </FormField>
+          <FormField label="First earner">
+            <Input
+              value={form.earnerName}
+              onChange={(e) => setForm({ ...form, earnerName: e.target.value })}
+              placeholder="e.g. Person 1"
+            />
+          </FormField>
+          <FormField label="Preset">
+            <Select
+              value={form.categoryPreset}
+              onChange={(e) =>
+                setForm({ ...form, categoryPreset: e.target.value })
+              }
+            >
+              <option value="swiss">Swiss</option>
+              <option value="generic">Generic</option>
+              <option value="german">German</option>
+              <option value="french">French</option>
+            </Select>
+          </FormField>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={createHousehold} disabled={creating}>
+            <Plus className="h-4 w-4" />
+            {creating ? "Creating..." : "Create household"}
+          </Button>
+          {error && <span className="text-xs text-destructive">{error}</span>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 interface IncomeEarner {
   id: string;
   name: string;

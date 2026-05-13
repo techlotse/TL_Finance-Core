@@ -4,8 +4,7 @@
 
 This document inventories every protected route in the app, names the gate
 that protects it, and records the threat the gate is meant to stop. It
-substitutes for an automated test suite at v0.5.0 — that comes in v0.7
-(see `docs/strategy/ROADMAP.md`).
+is backed by database integration tests expanded for v0.7.0.
 
 ## Architecture
 
@@ -52,10 +51,10 @@ session row from PostgreSQL and rejects expired or inactive users.
 | `/api/auth/signin` | POST | Generic 401 on bad creds; rate-limited per IP via audit-log count |
 | `/api/auth/signout` | POST | Always idempotent |
 | `/api/auth/me` | GET | Returns null if no session |
-| `/api/auth/reset-password/request` | POST | Always 200 — never confirms whether email exists |
+| `/api/auth/reset-password/request` | POST | Always 200 — never confirms whether email exists; rate-limited per IP |
 | `/api/auth/reset-password/complete` | POST | Token consumed atomically with password update; all sessions revoked |
-| `/api/auth/verify-email/request` | POST | Requires session — resending only for the signed-in user |
-| `/api/auth/verify-email/[token]` | POST | Public — token bearer authenticates the request itself |
+| `/api/auth/verify-email/request` | POST | Requires session; rate-limited per IP/user; resending only for the signed-in user |
+| `/api/auth/verify-email/[token]` | POST | Public; token bearer authenticates the request itself; single-use consume |
 
 #### Household-scoped (session + tenant gate)
 
@@ -89,6 +88,8 @@ and writes only with that scope. Every `[id]` mutation runs
 | `/api/forecast` | household.id on every read | — |
 | `/api/forecast/account/[id]` | findFirst id+householdId | — |
 | `/api/household` | getActiveHousehold | — |
+| `/api/household/list` | Lists only memberships belonging to the caller | — |
+| `/api/household/create` | Creates an owner household for the caller and switches to it | — |
 | `/api/household/export` | householdId | — |
 | `/api/household/import` | householdId; merges by name (no cross-tenant ids) | — |
 | `/api/household/switch` | Validates target membership belongs to caller | — |
@@ -104,7 +105,9 @@ and mutated by future admin-management UI.
 | Route | Method | Notes |
 | --- | --- | --- |
 | `/api/admin/config/auth` | PATCH | Audited |
+| `/api/admin/config/ai` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/mail` | PATCH | Audited; cipher field never echoed |
+| `/api/admin/config/mail/test` | POST | Sends a test email; audited |
 | `/api/admin/config/backup` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/observability` | PATCH | Audited |
 | `/api/admin/audit-log` | GET | Read-only listing |
@@ -139,16 +142,24 @@ When you suspect a tenant-leak:
 3. Forge the active-household cookie pointing at a foreign membership id; the server should ignore it (selection is only honoured if the user owns that membership row).
 4. Forge the session cookie with a stale/invalid token; the server should treat the request as anonymous.
 
-## Pending — automated tests
+## Automated tests
 
-Real automated coverage of the matrix above is a v0.7 deliverable. Suggested
-shape: a tiny vitest suite that
+The v0.7.0 access suite in `src/lib/access-control.int.test.ts` runs against a
+real migrated PostgreSQL database and covers:
 
-- Boots the Next.js handler in-process,
-- Spins up a throwaway Postgres via `pg-mem` or testcontainers,
-- Creates two users in two separate households,
-- Drives every protected route with each user's session and asserts both
-  shapes return the expected status code.
+- Forged active-household cookies pointing at another user's membership.
+- Rejected household switching to another user's membership.
+- Successful switching between memberships owned by the signed-in user.
+- Rejected cross-tenant PATCH across account, category, category group, income
+  earner, budget item, transfer, asset, and investment projection routes.
+- Rejected cross-tenant DELETE across the same protected mutable resources,
+  including routes that run reference checks before destructive operations.
+- Rejected attempts to attach owned rows to another household's category group,
+  category, account, income earner, transfer account, or projection account.
+- Rejected admin configuration writes from non-admin users.
+- Password reset and verification resend rate limits.
+- Single-use password reset tokens with session revocation.
+- Single-use email verification tokens.
 
-Until then, this document is the canonical record of what is supposed to be
-protected and how.
+Pending for beta: browser-level smoke coverage for auth, admin, onboarding, and
+SMTP flows.

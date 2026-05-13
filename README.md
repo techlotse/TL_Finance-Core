@@ -1,20 +1,22 @@
 # TL Finance Core - Repository Overview
 
 [![Docker Build](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml)
-[![Version](https://img.shields.io/badge/version-0.5.0-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.5.0)
+[![Version](https://img.shields.io/badge/version-0.7.0-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.0)
 [![License](https://img.shields.io/badge/license-Source%20Available-00D1C7)](./LICENSE)
 
 ## Purpose
 
 TL Finance Core is a Docker-first household finance application for budgeting,
 forecasting, account tracking, asset tracking, debt visibility, and investment
-projection. The v0.5.0 handoff keeps the current feature set stable while
-preparing the codebase for the public `techlotse/TL-Finance-Core` repository.
+projection. The v0.7.0 release keeps the public handoff feature set stable and
+hardens authentication, reset, verification, admin, and tenant-isolation paths
+with database-backed security tests.
 
 The product is built for privacy-preserving self-hosting first. It includes
 first-party email/password authentication, PostgreSQL persistence, tenant-scoped
-household data, audit logging, portable JSON import/export, and a dark-mode
-first interface aligned to TL Finance Core Style Guide v1.0.
+household data, active household switching, rate-limited auth flows, audit
+logging, portable JSON import/export, and a dark-mode first interface aligned
+to TL Finance Core Style Guide v1.0.
 
 ## Architecture
 
@@ -125,6 +127,6 @@ Public documentation:
 - If the multinode database does not initialize, verify shell scripts are LF
   and that the postgres `command:` remains YAML list form.
 - The PostgreSQL replica is available for standby/failover, but Prisma reads
-  and writes through the primary in v0.5.0.
+  and writes through the primary in v0.7.0.
 - SMTP delivery is available through the admin mail configuration. Scheduled
   backup execution and S3-compatible upload remain roadmap items.

@@ -53,6 +53,12 @@ export async function DELETE(
     const url = new URL(req.url);
     const force = url.searchParams.get("force") === "true";
 
+    const found = await prisma.incomeEarner.findFirst({
+      where: { id, householdId },
+      select: { id: true }
+    });
+    if (!found) throw new OwnershipError("Income earner not found", 404);
+
     if (force) {
       const usage = await prisma.budgetLineItem.count({
         where: { incomeEarnerId: id }
@@ -63,11 +69,9 @@ export async function DELETE(
           409
         );
       }
-      const result = await prisma.incomeEarner.deleteMany({
+      await prisma.incomeEarner.deleteMany({
         where: { id, householdId }
       });
-      if (result.count === 0)
-        throw new OwnershipError("Income earner not found", 404);
 
       await writeAudit({
         action: "delete",

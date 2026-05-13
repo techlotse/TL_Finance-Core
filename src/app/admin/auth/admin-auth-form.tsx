@@ -12,6 +12,8 @@ interface AuthConfig {
   emailVerificationRequired: boolean;
   sessionTtlDays: number;
   maxFailedSignins: number;
+  maxPasswordResetRequestsPerHour: number;
+  maxEmailVerificationRequestsPerHour: number;
 }
 
 export function AdminAuthForm({ initial }: { initial: AuthConfig }) {
@@ -89,6 +91,44 @@ export function AdminAuthForm({ initial }: { initial: AuthConfig }) {
             value={cfg.maxFailedSignins}
             onChange={(e) =>
               setCfg({ ...cfg, maxFailedSignins: Number(e.target.value) || 1 })
+            }
+          />
+        </FormField>
+        <FormField
+          label="Max password reset requests per hour"
+          htmlFor="max-reset"
+          hint="Applies per IP and prevents reset email floods."
+        >
+          <Input
+            id="max-reset"
+            type="number"
+            min={1}
+            max={1000}
+            value={cfg.maxPasswordResetRequestsPerHour}
+            onChange={(e) =>
+              setCfg({
+                ...cfg,
+                maxPasswordResetRequestsPerHour: Number(e.target.value) || 1
+              })
+            }
+          />
+        </FormField>
+        <FormField
+          label="Max verification emails per hour"
+          htmlFor="max-verify"
+          hint="Applies per IP and user account for verification resend requests."
+        >
+          <Input
+            id="max-verify"
+            type="number"
+            min={1}
+            max={1000}
+            value={cfg.maxEmailVerificationRequestsPerHour}
+            onChange={(e) =>
+              setCfg({
+                ...cfg,
+                maxEmailVerificationRequestsPerHour: Number(e.target.value) || 1
+              })
             }
           />
         </FormField>

@@ -3,7 +3,7 @@
 ## Purpose
 
 This document summarizes the REST API surface used by TL Finance Core client
-components. It is not a public third-party API contract in v0.5.0.
+components. It is not a public third-party API contract in v0.7.0.
 
 ## Architecture
 
@@ -18,7 +18,7 @@ Endpoint groups:
 | Health | `GET /api/health` |
 | Auth | `/api/auth/signup`, `/api/auth/signin`, `/api/auth/signout`, `/api/auth/me`, `/api/auth/reset-password/*`, `/api/auth/verify-email/*` |
 | Onboarding | `POST /api/onboarding` |
-| Household | `GET/PATCH /api/household`, `GET /api/household/export`, `POST /api/household/import`, `POST /api/household/switch`, `GET /api/household/list` |
+| Household | `GET/PATCH /api/household`, `GET /api/household/list`, `POST /api/household/create`, `POST /api/household/switch`, `GET /api/household/export`, `POST /api/household/import` |
 | Budget | `/api/budget-items`, `/api/categories`, `/api/category-groups/[id]`, `/api/income-earners` |
 | Accounts | `/api/accounts`, `/api/accounts/[id]`, `/api/accounts/[id]/snapshots`, `/projection`, `/debt-projection` |
 | Transfers | `/api/transfers`, `/api/transfers/[id]` |
@@ -26,7 +26,7 @@ Endpoint groups:
 | Forecast | `/api/forecast`, `/api/forecast/account/[id]`, `/api/dashboard/summary` |
 | Investments | `/api/investment-projections`, `/api/investment-projections/[id]`, `/result` |
 | Advice | `POST /api/advice/ai` |
-| Admin | `/api/admin/config/*`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
+| Admin | `/api/admin/config/*`, `POST /api/admin/config/mail/test`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
 | FX | `GET /api/exchange-rates/latest?from=CHF&to=EUR` |
 
 ## Configuration
@@ -61,6 +61,30 @@ Expected mutation rules:
 4. Write through Prisma.
 5. Write an audit event.
 6. Return serialized plain data.
+
+Household selection routes:
+
+- `GET /api/household/list` returns the signed-in user's memberships and the
+  active membership id.
+- `POST /api/household/create` creates an additional owner household from the
+  onboarding schema, applies the requested preset, switches the active
+  household cookie, and writes an audit event.
+- `POST /api/household/switch` accepts a membership id and only switches when
+  that membership belongs to the signed-in user.
+
+Mail administration routes:
+
+- `PATCH /api/admin/config/mail` stores the SMTP host, port, TLS mode, sender,
+  username, and sealed password used by password reset and verification mail.
+- `POST /api/admin/config/mail/test` sends a test message to the signed-in
+  admin email unless a recipient is supplied in the request body.
+
+Authentication hardening:
+
+- Sign-in failures, password reset requests, and verification email requests
+  are rate-limited through audit-log counters.
+- Reset and verification tokens are consumed atomically and are single-use.
+- Password reset completion revokes all existing sessions for that user.
 
 ## Troubleshooting
 

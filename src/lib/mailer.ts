@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
-import { loadAdminConfig, revealSecret } from "./admin-config";
+import { loadAdminConfig, revealSecret, type MailConfig } from "./admin-config";
 import { log } from "./logger";
 
 /**
@@ -20,13 +20,29 @@ export interface MailMessage {
   text: string;
 }
 
+function smtpTlsOptions(m: MailConfig) {
+  const mode = m.smtpTlsMode ?? "auto";
+  if (mode === "ssl") return { secure: true };
+  if (mode === "starttls") return { secure: false, requireTLS: true };
+  if (mode === "none") return { secure: false, ignoreTLS: true };
+  if (m.smtpPort === 465) return { secure: true };
+  if (m.smtpPort === 587) return { secure: false, requireTLS: true };
+  return { secure: false };
+}
+
+function defaultFromEmail(m: MailConfig): string {
+  if (m.fromEmail) return m.fromEmail;
+  if (m.smtpUser?.includes("@")) return m.smtpUser;
+  return `no-reply@${m.smtpHost}`;
+}
+
 /**
  * Build a nodemailer transporter from current admin config. Returns null
  * when SMTP isn't configured; callers should fall back to logging.
  */
 async function buildTransporter(): Promise<{
   transporter: Transporter;
-  from: string;
+  from: { name: string; address: string };
 } | null> {
   const cfg = await loadAdminConfig();
   const m = cfg.mailConfig;
@@ -36,8 +52,10 @@ async function buildTransporter(): Promise<{
   const transporter = nodemailer.createTransport({
     host: m.smtpHost,
     port: m.smtpPort,
-    // 465 → implicit TLS; everything else negotiates STARTTLS.
-    secure: m.smtpPort === 465,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+    ...smtpTlsOptions(m),
     auth:
       m.smtpUser && password
         ? { user: m.smtpUser, pass: password }
@@ -45,10 +63,9 @@ async function buildTransporter(): Promise<{
   });
 
   const fromName = m.fromName ?? "TL Finance Core";
-  const fromEmail = m.fromEmail ?? `no-reply@${m.smtpHost}`;
   return {
     transporter,
-    from: `"${fromName}" <${fromEmail}>`
+    from: { name: fromName, address: defaultFromEmail(m) }
   };
 }
 
