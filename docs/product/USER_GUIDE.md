@@ -3,7 +3,7 @@
 ## Purpose
 
 This guide explains how an instance user sets up and operates TL Finance Core
-v0.7.0.
+v0.7.3.
 
 ## Architecture
 
@@ -13,8 +13,8 @@ the signed-in user's memberships:
 ```text
 Onboarding -> Dashboard
 Dashboard -> Accounts, Budget, Transfers, Assets, Debt, Forecast, Investments
-Settings -> Household, earners, categories, preferences, backup/import-export
-Admin -> Auth, mail, backups, observability, audit log
+Settings -> Household, earners, categories, preferences, billing, backup/import-export
+Admin -> Auth, mail, AI, payments, backups, observability, audit log
 ```
 
 ## Configuration
@@ -51,7 +51,9 @@ Core workflows:
    more than one membership.
 10. Create additional households from Settings when a separate finance context
     is needed.
-11. Export household JSON in Settings before destructive import or major
+11. Review the current tier and available upgrades in Settings -> Billing when
+    the instance operator enables public-alpha payments.
+12. Export household JSON in Settings before destructive import or major
     changes.
 
 Admin workflows:
@@ -60,7 +62,8 @@ Admin workflows:
 2. Configure SMTP values, send the built-in test email, then test password
    reset and verification delivery.
 3. Enable backups, run a manual backup, and test restore before public use.
-4. Review audit events and prune old entries according to retention policy.
+4. Configure hosted payment links under Payments for public-alpha billing.
+5. Review audit events and prune old entries according to retention policy.
 
 ## Troubleshooting
 

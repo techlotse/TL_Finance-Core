@@ -3,7 +3,7 @@
 ## Purpose
 
 This document summarizes the REST API surface used by TL Finance Core client
-components. It is not a public third-party API contract in v0.7.0.
+components. It is not a public third-party API contract in v0.7.3.
 
 ## Architecture
 
@@ -26,6 +26,7 @@ Endpoint groups:
 | Forecast | `/api/forecast`, `/api/forecast/account/[id]`, `/api/dashboard/summary` |
 | Investments | `/api/investment-projections`, `/api/investment-projections/[id]`, `/result` |
 | Advice | `POST /api/advice/ai` |
+| Billing | `POST /api/billing/checkout` |
 | Admin | `/api/admin/config/*`, `POST /api/admin/config/mail/test`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
 | FX | `GET /api/exchange-rates/latest?from=CHF&to=EUR` |
 
@@ -78,6 +79,14 @@ Mail administration routes:
   username, and sealed password used by password reset and verification mail.
 - `POST /api/admin/config/mail/test` sends a test message to the signed-in
   admin email unless a recipient is supplied in the request body.
+
+Payment routes:
+
+- `PATCH /api/admin/config/payments` stores public-alpha hosted payment-link
+  configuration. It is admin-only and audited.
+- `POST /api/billing/checkout` accepts `{ tier: "core" | "smart" | "ai" }`,
+  requires a signed-in user, appends hosted-checkout reconciliation parameters,
+  writes an audit event, and returns `{ ok, url }`.
 
 Authentication hardening:
 

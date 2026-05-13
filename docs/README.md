@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This folder contains the public documentation set for TL Finance Core v0.5.0.
+This folder contains the public documentation set for TL Finance Core v0.7.3.
 The structure is intentionally grouped by module so the public repository does
 not expose stale root-level planning material.
 
@@ -59,6 +59,8 @@ Use these entry points:
 | Need | Document |
 | --- | --- |
 | Run the system | [operations/DEPLOYMENT.md](operations/DEPLOYMENT.md) |
+| Deploy HA roles | [operations/HA_DEPLOYMENT.md](operations/HA_DEPLOYMENT.md) |
+| Configure payment alpha | [operations/PAYMENTS_ALPHA.md](operations/PAYMENTS_ALPHA.md) |
 | Prepare public deployment | [operations/PUBLIC_DEPLOYMENT_CHECKLIST.md](operations/PUBLIC_DEPLOYMENT_CHECKLIST.md) |
 | Understand the stack | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
 | Understand stored data | [architecture/DATA_MODEL.md](architecture/DATA_MODEL.md) |

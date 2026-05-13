@@ -1,0 +1,79 @@
+upstream tlfc_apps {
+    server ${TLFC_APP_UPSTREAM_1} max_fails=3 fail_timeout=30s;
+    server ${TLFC_APP_UPSTREAM_2} max_fails=3 fail_timeout=30s;
+    keepalive 32;
+}
+
+limit_req_zone $binary_remote_addr zone=general:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=auth:10m rate=5r/m;
+limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m;
+
+server {
+    listen 80;
+    server_name _;
+    client_max_body_size 20M;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location /health {
+        access_log off;
+        return 200 "nginx healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    location /api/health {
+        access_log off;
+        proxy_pass http://tlfc_apps;
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 2s;
+    }
+
+    location /api/auth/ {
+        limit_req zone=auth burst=2 nodelay;
+        proxy_pass http://tlfc_apps;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+
+    location /api/ {
+        limit_req zone=api burst=20;
+        proxy_pass http://tlfc_apps;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+
+    location /_next/static/ {
+        proxy_pass http://tlfc_apps;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        limit_req zone=general burst=20;
+        proxy_pass http://tlfc_apps;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+}

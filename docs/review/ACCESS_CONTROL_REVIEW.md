@@ -4,7 +4,7 @@
 
 This document inventories every protected route in the app, names the gate
 that protects it, and records the threat the gate is meant to stop. It
-is backed by database integration tests expanded for v0.7.0.
+is backed by database integration tests expanded for v0.7.3.
 
 ## Architecture
 
@@ -95,6 +95,7 @@ and writes only with that scope. Every `[id]` mutation runs
 | `/api/household/switch` | Validates target membership belongs to caller | — |
 | `/api/onboarding` | Refuses if user already has any membership | — |
 | `/api/exchange-rates/latest` | Session required; data is global anyway | — |
+| `/api/billing/checkout` | Session required; payment config is global | — |
 
 #### Admin role-gated
 
@@ -108,6 +109,7 @@ and mutated by future admin-management UI.
 | `/api/admin/config/ai` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/mail` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/mail/test` | POST | Sends a test email; audited |
+| `/api/admin/config/payments` | PATCH | Audited; hosted checkout URLs only |
 | `/api/admin/config/backup` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/observability` | PATCH | Audited |
 | `/api/admin/audit-log` | GET | Read-only listing |
@@ -144,7 +146,7 @@ When you suspect a tenant-leak:
 
 ## Automated tests
 
-The v0.7.0 access suite in `src/lib/access-control.int.test.ts` runs against a
+The v0.7.3 access suite in `src/lib/access-control.int.test.ts` runs against a
 real migrated PostgreSQL database and covers:
 
 - Forged active-household cookies pointing at another user's membership.
@@ -161,5 +163,9 @@ real migrated PostgreSQL database and covers:
 - Single-use password reset tokens with session revocation.
 - Single-use email verification tokens.
 
-Pending for beta: browser-level smoke coverage for auth, admin, onboarding, and
-SMTP flows.
+Additional static readiness checks run through `npm run test:readiness:v0.8`
+and cover payment route presence, `/admin` isolation, HA deployment assets,
+migration safety, and backup import compatibility.
+
+Pending for beta: browser-level smoke coverage for auth, admin, onboarding,
+payments, and SMTP flows.

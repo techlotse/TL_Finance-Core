@@ -20,6 +20,7 @@ export type AuditAction =
   | "email_verification_request"
   | "email_verified"
   | "ai_advice_generate"
+  | "billing_checkout_start"
   | "admin_mail_test"
   | "admin_config_update";
 

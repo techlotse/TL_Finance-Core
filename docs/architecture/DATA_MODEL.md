@@ -55,7 +55,8 @@ other
 ## Deployment
 
 The Prisma schema is the source of truth. Existing migration files must not be
-edited. Additive changes require a new migration:
+edited. From v0.7.3 onward, migration SQL is checked for destructive
+statements in CI. Additive changes require a new migration:
 
 ```bash
 npx prisma migrate dev --name <change-name>

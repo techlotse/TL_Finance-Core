@@ -316,6 +316,40 @@ export const adminAiConfigPatchSchema = z.object({
   apiKey: z.string().optional().nullable()
 });
 
+const hostedCheckoutUrl = z
+  .string()
+  .trim()
+  .url()
+  .refine((v) => v.startsWith("https://"), {
+    message: "Hosted payment URLs must use https"
+  });
+
+export const adminPaymentTierConfigPatchSchema = z.object({
+  enabled: z.boolean().optional(),
+  displayName: z.string().trim().min(1).max(80).optional(),
+  priceLabel: z.string().trim().max(80).optional().nullable(),
+  summary: z.string().trim().max(240).optional().nullable(),
+  checkoutUrl: hostedCheckoutUrl.optional().nullable()
+});
+
+export const adminPaymentConfigPatchSchema = z.object({
+  enabled: z.boolean().optional(),
+  provider: z.enum(["none", "stripe_payment_links"]).optional(),
+  billingPortalUrl: hostedCheckoutUrl.optional().nullable(),
+  supportEmail: emailField.optional().nullable(),
+  tiers: z
+    .object({
+      core: adminPaymentTierConfigPatchSchema.optional(),
+      smart: adminPaymentTierConfigPatchSchema.optional(),
+      ai: adminPaymentTierConfigPatchSchema.optional()
+    })
+    .optional()
+});
+
+export const billingCheckoutSchema = z.object({
+  tier: productTierEnum
+});
+
 export const adminObservabilityConfigPatchSchema = z.object({
   logLevel: z.enum(["debug", "info", "warn", "error"]).optional(),
   sentryDsn: z.string().trim().optional().nullable(),

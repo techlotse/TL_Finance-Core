@@ -2,8 +2,9 @@
 
 ## Purpose
 
-This document describes how to run TL Finance Core v0.7.0 locally, in Docker,
-and in the bundled multinode Docker Desktop topology.
+This document describes how to run TL Finance Core v0.7.3 locally, in Docker,
+in the bundled multinode Docker Desktop topology, and in the public-alpha HA
+role topology.
 
 ## Architecture
 
@@ -25,6 +26,12 @@ postgres-primary -> postgres-replica
 pgadmin optional on :5050
 ```
 
+Public-alpha HA:
+
+```text
+Person -> LB -> HA web -> HA DB
+```
+
 `GET /api/health` validates application liveness and database readiness.
 
 ## Configuration
@@ -40,6 +47,8 @@ Create `.env` from `.env.example` and set at least:
 | `REDIS_PASSWORD` | Multinode | Redis password |
 | `PGADMIN_EMAIL` | Optional | PgAdmin login |
 | `PGADMIN_PASSWORD` | Optional | PgAdmin login |
+| `TLFC_APP_UPSTREAM_1/2` | HA LB | App host:port targets for NGINX |
+| `TLFC_DB_BIND` | HA DB | Private interface to expose PostgreSQL on |
 
 Production containers fail fast if `APP_SECRET` is missing, too short, or left
 as a placeholder, and if the runtime database URL still contains the default
@@ -81,6 +90,17 @@ docker compose -f docker-compose-multinode.yml exec app-1 npx prisma migrate dep
 docker compose -f docker-compose-multinode.yml exec app-1 npx prisma db seed
 ```
 
+Public-alpha HA roles:
+
+```bash
+docker compose -f docker-compose.ha.yml --profile db-primary up -d
+docker compose -f docker-compose.ha.yml --profile app up -d --build
+docker compose -f docker-compose.ha.yml --profile lb up -d
+```
+
+Detailed same-node and multi-host examples live in
+[HA_DEPLOYMENT.md](HA_DEPLOYMENT.md).
+
 ## Usage
 
 Operational commands:
@@ -93,6 +113,8 @@ Operational commands:
 | Stop multinode | `docker compose -f docker-compose-multinode.yml down` |
 | Typecheck in app container | `docker compose exec app npx tsc --noEmit` |
 | Start PgAdmin | `docker compose -f docker-compose-multinode.yml --profile tools up -d pgadmin` |
+| HA readiness | `npm run test:readiness:v0.8` |
+| Migration safety | `npm run test:migrations` |
 
 Backups:
 
@@ -111,6 +133,13 @@ Mail:
 - Send the built-in test email before enabling required email verification or
   relying on password reset delivery.
 
+Payments:
+
+- Configure public-alpha payment links in Admin -> Payments.
+- The user-facing flow appears under Settings -> Billing.
+- v0.7.3 redirects to hosted payment links only; webhook fulfillment is a
+  v0.8.0 readiness item. See [PAYMENTS_ALPHA.md](PAYMENTS_ALPHA.md).
+
 ## Troubleshooting
 
 - If the SMTP test fails, confirm the provider allows SMTP password/app-password
@@ -123,3 +152,5 @@ Mail:
   value used when the secrets were saved.
 - If migrations fail, inspect `prisma/migrations/` and do not edit applied
   migration files.
+- If an exported household JSON does not import, verify the target app version
+  is the same or newer than the export's `version`.

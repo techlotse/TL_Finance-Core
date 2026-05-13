@@ -9,6 +9,7 @@ import {
   ExchangeRateStatusCard
 } from "./settings-client";
 import { ImportExportCard } from "./import-export-card";
+import { BillingCard } from "./billing-card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Card,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { SettingsTabs } from "./settings-tabs";
 import { requirePageSession } from "@/lib/page-auth";
+import { loadPublicAdminConfig } from "@/lib/admin-config";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export default async function SettingsPage() {
   const membership = ctx.membership;
   if (!membership) redirect("/onboarding");
   const household = membership.household;
-  const [earners, groups, latestRate] = await Promise.all([
+  const [earners, groups, latestRate, adminConfig] = await Promise.all([
     prisma.incomeEarner.findMany({
       where: { householdId: household.id, deletedAt: null },
       orderBy: { createdAt: "asc" }
@@ -44,7 +46,8 @@ export default async function SettingsPage() {
     }),
     prisma.exchangeRate.findFirst({
       orderBy: { createdAt: "desc" }
-    })
+    }),
+    loadPublicAdminConfig()
   ]);
 
   return (
@@ -122,6 +125,12 @@ export default async function SettingsPage() {
               }}
             />
           </div>
+        }
+        billing={
+          <BillingCard
+            currentTier={ctx.user.productTier}
+            paymentConfig={adminConfig.paymentConfig}
+          />
         }
         backup={<ImportExportCard />}
       />

@@ -31,6 +31,30 @@ branch, SHA, semver, and latest tags when configured with Docker Hub secrets.
 
 No public changes yet.
 
+## v0.7.3 - 2026-05-13
+
+Public-alpha preparation.
+
+Changed:
+
+- Kept SaaS administration under the protected `/admin` endpoint and added a
+  Payments section for public-alpha billing setup.
+- Added admin-managed hosted payment-link configuration and a user-facing
+  Settings -> Billing workflow backed by `POST /api/billing/checkout`.
+- Added hosted checkout URL generation with `prefilled_email`,
+  `client_reference_id`, and alpha UTM parameters for reconciliation.
+- Added a v0.8 readiness check suite covering admin isolation, payments,
+  HA deployment assets, migration safety, route guards, and backup import
+  compatibility.
+- Added a migration additive-safety check to reject destructive migration SQL
+  in CI.
+- Added `docker-compose.ha.yml` plus an NGINX template for same-node or
+  split-host LB/app/DB role deployments.
+- Documented HA deployment across separate LB, web, DB primary, and DB replica
+  hosts.
+- Changed household import API compatibility to accept older supported export
+  versions instead of only the current export version.
+
 ## v0.7.0 - 2026-05-13
 
 Authentication and access security hardening.

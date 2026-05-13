@@ -3,7 +3,7 @@
 ## Purpose
 
 This document records the current PostgreSQL schema shape and migration policy
-for TL Finance Core v0.7.0.
+for TL Finance Core v0.7.3.
 
 ## Architecture
 
@@ -19,6 +19,7 @@ Applied migrations:
 | `20260429120000_balance_snapshots` | Account balance snapshot support |
 | `20260429140000_assets_and_account_extensions` | Assets, investment-account fields, debt-account fields |
 | `20260502100000_product_tiers_and_ai_config` | Product tier and AI provider configuration |
+| `20260513210000_payment_config` | Admin payment-link configuration |
 
 Schema highlights:
 
@@ -33,7 +34,7 @@ Schema highlights:
 | `Asset` | Tangible assets with signed annual appreciation rate |
 | `BalanceSnapshot` | Periodic actual-balance reading per `BankAccountCurrency`; latest mirrors onto `currentBalance` |
 | `AuditLog` | Append-only operational trail |
-| `AdminConfig` | Singleton JSON config with sealed secret fields |
+| `AdminConfig` | Singleton JSON config with auth, mail, AI, payment, backup, and observability config; secrets are sealed |
 | `EmailVerificationToken` / `PasswordResetToken` | SHA-256 hashed, single-use, expiry-bounded |
 
 `BankAccount` carries optional fields the corresponding pages read:
@@ -78,8 +79,10 @@ npx prisma db seed
 ## Usage
 
 Create new migrations for every schema change. Do not edit already-applied SQL.
-Use additive changes where possible, then backfill with explicit scripts or
-application-level migration code when needed.
+From v0.7.3 onward, migrations are additive by default and CI runs
+`npm run test:migrations` to reject destructive SQL such as `DROP TABLE`,
+`DROP COLUMN`, `TRUNCATE`, or bulk `DELETE FROM`. Backfill with explicit
+scripts or application-level migration code when needed.
 
 ## Troubleshooting
 

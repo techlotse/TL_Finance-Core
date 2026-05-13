@@ -35,9 +35,9 @@ export async function POST(req: NextRequest) {
     if (typeof payload !== "object" || typeof payload.version !== "number") {
       return jsonError("Payload doesn't look like a valid household export", 422);
     }
-    if (payload.version !== HOUSEHOLD_EXPORT_VERSION) {
+    if (payload.version > HOUSEHOLD_EXPORT_VERSION) {
       return jsonError(
-        `Export version ${payload.version} is not supported (expected v${HOUSEHOLD_EXPORT_VERSION})`,
+        `Export version ${payload.version} is newer than this instance supports (current v${HOUSEHOLD_EXPORT_VERSION})`,
         422
       );
     }
