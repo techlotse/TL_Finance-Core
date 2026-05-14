@@ -31,6 +31,28 @@ branch, SHA, semver, and latest tags when configured with Docker Hub secrets.
 
 No public changes yet.
 
+## v0.7.5 - 2026-05-13
+
+Security audit and hardening.
+
+Changed:
+
+- Added `APP_BASE_URL` as a required production setting so password-reset and
+  verification emails do not trust request `Host` headers.
+- Added middleware-level same-origin checks for unsafe browser requests and
+  baseline security headers for app responses.
+- Stopped production fallback mail/auth logs from including bearer reset or
+  verification links.
+- Sanitized sign-in `next` redirects to local paths only.
+- Restricted public-alpha Stripe checkout and billing portal URLs to Stripe
+  hosted domains and revalidated before redirecting users.
+- Required server-side typed confirmation for destructive household replace
+  imports.
+- Made first-user admin assignment run inside a serializable transaction.
+- Added `npm run test:security` to CI.
+- Added focused tests for trusted origin handling, redirect sanitization, and
+  payment URL allowlists.
+
 ## v0.7.3 - 2026-05-13
 
 Public-alpha preparation.

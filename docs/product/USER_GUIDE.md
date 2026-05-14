@@ -3,7 +3,7 @@
 ## Purpose
 
 This guide explains how an instance user sets up and operates TL Finance Core
-v0.7.3.
+v0.7.5.
 
 ## Architecture
 

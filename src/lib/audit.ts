@@ -21,6 +21,7 @@ export type AuditAction =
   | "email_verified"
   | "ai_advice_generate"
   | "billing_checkout_start"
+  | "backup_run"
   | "admin_mail_test"
   | "admin_config_update";
 

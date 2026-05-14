@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Upload, AlertTriangle } from "lucide-react";
 
 type ImportMode = "merge" | "replace";
+const REPLACE_CONFIRMATION = "DELETE CURRENT HOUSEHOLD DATA";
 
 interface ImportResult {
   earners: { created: number; matched: number };
@@ -77,20 +78,22 @@ export function ImportExportCard() {
         throw new Error("That doesn't look like a valid JSON file.");
       }
 
-      if (
-        mode === "replace" &&
-        !confirm(
-          "This will permanently delete every account, budget item, transfer and projection in the current household before loading the file. Continue?"
-        )
-      ) {
-        setImporting(false);
-        return;
+      let confirmReplace: string | undefined;
+      if (mode === "replace") {
+        const typed = prompt(
+          `Replace mode permanently deletes current household data before loading the file.\n\nType ${REPLACE_CONFIRMATION} to continue.`
+        );
+        if (typed !== REPLACE_CONFIRMATION) {
+          setImporting(false);
+          return;
+        }
+        confirmReplace = typed;
       }
 
       const res = await fetch("/api/household/import", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ payload, mode })
+        body: JSON.stringify({ payload, mode, confirmReplace })
       });
       const json = await res.json();
       if (!res.ok) {

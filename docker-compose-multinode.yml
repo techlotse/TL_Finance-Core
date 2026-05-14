@@ -56,6 +56,7 @@ services:
       DATABASE_URL: postgresql://budget:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres-primary:5432/budget?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
       APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
       EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
       FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
       BACKUP_DIR: /var/backups/tl-finance-core
@@ -88,6 +89,7 @@ services:
       DATABASE_URL: postgresql://budget:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres-primary:5432/budget?schema=public
       REDIS_URL: redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
       APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
       EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
       FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
       BACKUP_DIR: /var/backups/tl-finance-core

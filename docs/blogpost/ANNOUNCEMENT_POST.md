@@ -86,6 +86,7 @@ Roadmap:
 - v0.6.0: user separation and in-app authentication refinement.
 - v0.7.0: authentication and access security hardening.
 - v0.7.3: public-alpha payment, HA, migration, and backup readiness prep.
+- v0.7.5: security audit fixes and production-origin hardening.
 - v0.8.0: public alpha in HA with a payment provider for the SaaS version.
 - v0.9.0: bug fixes and public beta readiness.
 - v1.0.0: stable public release with the v0.5.0 feature set preserved.

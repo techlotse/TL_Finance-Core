@@ -83,13 +83,13 @@ export async function sendMail(msg: MailMessage): Promise<{
   }
 
   if (!built) {
-    // Provider not configured — log so the operator can still see the
-    // message during initial setup. We deliberately log the full body
-    // so password-reset URLs are still recoverable in dev.
-    log.warn("mailer: provider not configured; logging mail to stdout", {
+    // Provider not configured. In development we include the body so the
+    // first-boot loop can recover reset/verification links. Production logs
+    // must never contain bearer auth links.
+    log.warn("mailer: provider not configured", {
       to: msg.to,
       subject: msg.subject,
-      body: msg.text
+      ...(process.env.NODE_ENV === "production" ? {} : { body: msg.text })
     });
     return { delivered: false, reason: "provider_not_configured" };
   }

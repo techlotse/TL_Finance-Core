@@ -4,7 +4,7 @@
 
 This document inventories every protected route in the app, names the gate
 that protects it, and records the threat the gate is meant to stop. It
-is backed by database integration tests expanded for v0.7.3.
+is backed by database integration tests expanded for v0.7.5.
 
 ## Architecture
 
@@ -15,6 +15,7 @@ There are three concentric gates:
 | Edge middleware | `src/middleware.ts` | Unauthenticated requests to anything not on the public allowlist |
 | Session resolution | `getSession` / `requireSession` in `src/lib/auth.ts` | Stale, expired, or revoked sessions |
 | Tenant + role | `getActiveHouseholdId`, `requireAdminApi`, `lib/ownership.ts` | Cross-tenant data access; role escalation |
+| Request origin | `src/middleware.ts`, `APP_BASE_URL` | Browser CSRF attempts on unsafe methods |
 
 A request reaches a Prisma write only after passing all three.
 
@@ -32,6 +33,9 @@ Public allowlist (no session required):
 | `/_next/*`, `/favicon`, `/assets/*` | Static |
 
 Everything else carrying a 401 if no session cookie is present.
+Unsafe browser requests with an `Origin` header must match the configured
+public origin or the request host. Production deployments must set
+`APP_BASE_URL`.
 
 ## Deployment
 
@@ -146,7 +150,7 @@ When you suspect a tenant-leak:
 
 ## Automated tests
 
-The v0.7.3 access suite in `src/lib/access-control.int.test.ts` runs against a
+The v0.7.5 access suite in `src/lib/access-control.int.test.ts` runs against a
 real migrated PostgreSQL database and covers:
 
 - Forged active-household cookies pointing at another user's membership.
@@ -166,6 +170,9 @@ real migrated PostgreSQL database and covers:
 Additional static readiness checks run through `npm run test:readiness:v0.8`
 and cover payment route presence, `/admin` isolation, HA deployment assets,
 migration safety, and backup import compatibility.
+`npm run test:security` covers trusted auth-link origins, CSRF middleware,
+payment URL allowlists, destructive-import confirmation, and production token
+log suppression.
 
 Pending for beta: browser-level smoke coverage for auth, admin, onboarding,
 payments, and SMTP flows.

@@ -60,6 +60,7 @@ if [ ! -f "./.env" ]; then
 # Application
 NODE_ENV=production
 APP_SECRET=${APP_SECRET_VALUE}
+APP_BASE_URL=https://localhost
 
 # Database
 DB_PASSWORD=${DB_PASSWORD_VALUE}

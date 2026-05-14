@@ -7,6 +7,26 @@ interface CheckoutUrlInput {
   tier: PaymentTier;
 }
 
+const STRIPE_PAYMENT_LINK_HOSTS = new Set(["buy.stripe.com"]);
+const STRIPE_BILLING_PORTAL_HOSTS = new Set(["billing.stripe.com"]);
+
+function isAllowedHttpsHost(raw: string, hosts: Set<string>): boolean {
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" && hosts.has(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+export function isAllowedStripePaymentLinkUrl(raw: string): boolean {
+  return isAllowedHttpsHost(raw, STRIPE_PAYMENT_LINK_HOSTS);
+}
+
+export function isAllowedStripeBillingPortalUrl(raw: string): boolean {
+  return isAllowedHttpsHost(raw, STRIPE_BILLING_PORTAL_HOSTS);
+}
+
 export function stripeClientReference(input: {
   userId: string;
   tier: PaymentTier;
@@ -17,6 +37,13 @@ export function stripeClientReference(input: {
 }
 
 export function buildHostedCheckoutUrl(input: CheckoutUrlInput): string {
+  if (!isAllowedStripePaymentLinkUrl(input.baseUrl)) {
+    const err = new Error("Checkout URL is not an allowed Stripe Payment Link") as Error & {
+      status?: number;
+    };
+    err.status = 422;
+    throw err;
+  }
   const url = new URL(input.baseUrl);
   url.searchParams.set("prefilled_email", input.email);
   url.searchParams.set(

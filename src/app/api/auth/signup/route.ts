@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { signupSchema } from "@/lib/schemas";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,7 @@ import { cookies } from "next/headers";
 import { randomToken, sha256Hex } from "@/lib/crypto";
 import { sendMail } from "@/lib/mailer";
 import { log } from "@/lib/logger";
+import { publicAppOrigin } from "@/lib/request-origin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,22 +38,32 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await hashPassword(body.password);
 
-    // First-ever user becomes admin so the instance can configure itself.
-    const userCount = await prisma.user.count();
-    const role = userCount === 0 ? "admin" : "user";
+    const user = await prisma.$transaction(
+      async (tx) => {
+        // First-ever user becomes admin so the instance can configure itself.
+        // Serializable isolation prevents parallel first signups from both
+        // observing an empty user table and minting two admins.
+        const userCount = await tx.user.count();
+        const role = userCount === 0 ? "admin" : "user";
+        return tx.user.create({
+          data: {
+            email,
+            passwordHash,
+            role,
+            productTier: body.productTier,
+            // If email verification is required, leave emailVerifiedAt null;
+            // the user keeps a limited session that can only reach the
+            // verification gate and resend endpoint until token consumption.
+            emailVerifiedAt: cfg.authConfig.emailVerificationRequired
+              ? null
+              : new Date()
+          }
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        role,
-        productTier: body.productTier,
-        // If email verification is required by config, leave emailVerifiedAt null;
-        // the user will be redirected to a "verify your email" gate. For now
-        // (no mail provider yet) we auto-verify so the wizard can run.
-        emailVerifiedAt: cfg.authConfig.emailVerificationRequired ? null : new Date()
-      }
-    });
+    const role = user.role;
 
     const { token, expiresAt } = await createSession(user.id, {
       ttlDays: cfg.authConfig.sessionTtlDays,
@@ -81,9 +93,7 @@ export async function POST(req: NextRequest) {
       await prisma.emailVerificationToken.create({
         data: { tokenHash: vTokenHash, userId: user.id, expiresAt: vExpires }
       });
-      const proto = req.headers.get("x-forwarded-proto") || "https";
-      const host = req.headers.get("host") || "localhost";
-      const verifyUrl = `${proto}://${host}/verify-email/${vToken}`;
+      const verifyUrl = `${publicAppOrigin(req.headers)}/verify-email/${vToken}`;
       const result = await sendMail({
         to: user.email,
         subject: "Verify your TL Finance Core email address",
@@ -95,7 +105,7 @@ export async function POST(req: NextRequest) {
         log.warn("signup: verification mail not delivered", {
           userId: user.id,
           reason: result.reason,
-          verifyUrl
+          ...(process.env.NODE_ENV === "production" ? {} : { verifyUrl })
         });
       }
       return jsonOk({

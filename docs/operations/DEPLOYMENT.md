@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes how to run TL Finance Core v0.7.3 locally, in Docker,
+This document describes how to run TL Finance Core v0.7.5 locally, in Docker,
 in the bundled multinode Docker Desktop topology, and in the public-alpha HA
 role topology.
 
@@ -42,6 +42,7 @@ Create `.env` from `.env.example` and set at least:
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Prisma connection URL |
 | `APP_SECRET` | Yes | 32+ random bytes, backup required |
+| `APP_BASE_URL` | Yes | Public origin for auth links and same-origin checks |
 | `DB_PASSWORD` | Yes | Database password; must replace the local default |
 | `REPLICATION_PASSWORD` | Multinode | PostgreSQL replica password |
 | `REDIS_PASSWORD` | Multinode | Redis password |
@@ -51,8 +52,8 @@ Create `.env` from `.env.example` and set at least:
 | `TLFC_DB_BIND` | HA DB | Private interface to expose PostgreSQL on |
 
 Production containers fail fast if `APP_SECRET` is missing, too short, or left
-as a placeholder, and if the runtime database URL still contains the default
-`budget:budget` credentials.
+as a placeholder, if `APP_BASE_URL` is missing or invalid, and if the runtime
+database URL still contains the default `budget:budget` credentials.
 
 Generate a secret:
 
@@ -137,7 +138,7 @@ Payments:
 
 - Configure public-alpha payment links in Admin -> Payments.
 - The user-facing flow appears under Settings -> Billing.
-- v0.7.3 redirects to hosted payment links only; webhook fulfillment is a
+- v0.7.5 redirects to hosted payment links only; webhook fulfillment is a
   v0.8.0 readiness item. See [PAYMENTS_ALPHA.md](PAYMENTS_ALPHA.md).
 
 ## Troubleshooting

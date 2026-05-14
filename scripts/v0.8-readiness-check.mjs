@@ -28,9 +28,10 @@ function has(path, text) {
 }
 
 const pkg = JSON.parse(read("package.json"));
-assert("package is at least v0.7.3", /^0\.(7\.[3-9]|8\.)/.test(pkg.version));
+assert("package is at least v0.7.5", /^0\.(7\.[5-9]|8\.)/.test(pkg.version));
 assert("CI runs migration additive-safety check", pkg.scripts.ci.includes("test:migrations"));
 assert("CI runs v0.8 readiness check", pkg.scripts.ci.includes("test:readiness:v0.8"));
+assert("CI runs security audit check", pkg.scripts.ci.includes("test:security"));
 
 assert("SaaS admin page remains under /admin", existsSync(join(root, "src", "app", "admin", "layout.tsx")));
 assert("SaaS admin API remains under /api/admin", existsSync(join(root, "src", "app", "api", "admin")));
@@ -51,6 +52,7 @@ for (const profile of ["lb", "app", "db-primary", "db-replica"]) {
   assert(`HA compose has ${profile} profile`, haCompose.includes(`\"${profile}\"`));
 }
 assert("HA compose supports external DATABASE_URL", haCompose.includes("${DATABASE_URL:?"));
+assert("HA compose requires APP_BASE_URL", haCompose.includes("${APP_BASE_URL:?"));
 assert("HA compose can bind DB on a separate host", haCompose.includes("TLFC_DB_BIND"));
 assert("HA compose can run same-node app upstreams", haCompose.includes("app-1:3000"));
 assert("HA deployment runbook exists", existsSync(join(root, "docs", "operations", "HA_DEPLOYMENT.md")));

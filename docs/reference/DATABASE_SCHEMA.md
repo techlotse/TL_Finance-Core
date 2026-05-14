@@ -3,7 +3,7 @@
 ## Purpose
 
 This document records the current PostgreSQL schema shape and migration policy
-for TL Finance Core v0.7.3.
+for TL Finance Core v0.7.5.
 
 ## Architecture
 
@@ -79,7 +79,7 @@ npx prisma db seed
 ## Usage
 
 Create new migrations for every schema change. Do not edit already-applied SQL.
-From v0.7.3 onward, migrations are additive by default and CI runs
+From v0.7.5 onward, migrations are additive by default and CI runs
 `npm run test:migrations` to reject destructive SQL such as `DROP TABLE`,
 `DROP COLUMN`, `TRUNCATE`, or bulk `DELETE FROM`. Backfill with explicit
 scripts or application-level migration code when needed.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the runtime architecture for TL Finance Core v0.7.3.
+This document describes the runtime architecture for TL Finance Core v0.7.5.
 It is the source document for contributors who need to understand how requests,
 data, money calculations, and security boundaries move through the system.
 
@@ -52,6 +52,7 @@ Important boundaries:
 | Money | Decimal arithmetic only; no persisted JS floats |
 | Secrets | Admin SMTP/S3 secrets are AES-256-GCM sealed with `APP_SECRET` |
 | Billing | Hosted checkout links are configured by admins; no card data touches the app |
+| Request origin | `APP_BASE_URL` owns public auth-link generation and unsafe request origin checks |
 | Audit | State-changing routes write append-only audit events |
 
 ## Configuration
@@ -104,4 +105,4 @@ When adding features:
   `householdId` filters or missing ownership assertions.
 - If forecast totals drift, check whether amounts crossed a server-to-client
   boundary as JSON numbers instead of strings.
-- Redis is present in the multinode stack but is not the v0.7.3 session store.
+- Redis is present in the multinode stack but is not the v0.7.5 session store.

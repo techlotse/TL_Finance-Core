@@ -42,6 +42,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the writable PostgreSQL primary}
       APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
       EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
       FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
       BACKUP_DIR: /var/backups/tl-finance-core
@@ -70,6 +71,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the writable PostgreSQL primary}
       APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
       EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
       FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
       BACKUP_DIR: /var/backups/tl-finance-core

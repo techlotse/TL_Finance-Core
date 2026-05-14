@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the v0.7.3 public-alpha payment workflow. It is
+This document describes the v0.7.5 public-alpha payment workflow. It is
 intentionally hosted-link based: TL Finance Core does not process card data and
 does not yet grant entitlements automatically from payment webhooks.
 
@@ -51,7 +51,7 @@ self-hosted/default tier.
 
 - No card data touches TL Finance Core.
 - No payment provider secret is stored for this workflow.
-- No webhook endpoint is implemented in v0.7.3.
+- No webhook endpoint is implemented in v0.7.5.
 - Product-tier changes after successful payment remain an admin/manual step.
 
 ## v0.8.0 Readiness Requirements

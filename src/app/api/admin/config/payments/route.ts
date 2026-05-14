@@ -10,6 +10,10 @@ import {
 import { adminPaymentConfigPatchSchema } from "@/lib/schemas";
 import { writeAudit } from "@/lib/audit";
 import { ipHashFromHeaders } from "@/lib/auth";
+import {
+  isAllowedStripeBillingPortalUrl,
+  isAllowedStripePaymentLinkUrl
+} from "@/lib/billing";
 
 const TIERS: PaymentTier[] = ["core", "smart", "ai"];
 
@@ -26,8 +30,14 @@ export async function PATCH(req: NextRequest) {
       tiers[tier] = {
         ...tiers[tier],
         ...patch,
-        priceLabel: patch.priceLabel === null ? undefined : patch.priceLabel ?? tiers[tier].priceLabel,
-        summary: patch.summary === null ? undefined : patch.summary ?? tiers[tier].summary,
+        priceLabel:
+          patch.priceLabel === null
+            ? undefined
+            : patch.priceLabel ?? tiers[tier].priceLabel,
+        summary:
+          patch.summary === null
+            ? undefined
+            : patch.summary ?? tiers[tier].summary,
         checkoutUrl:
           patch.checkoutUrl === null
             ? undefined
@@ -45,6 +55,29 @@ export async function PATCH(req: NextRequest) {
     }
     if (body.supportEmail !== undefined) {
       patch.supportEmail = body.supportEmail ?? undefined;
+    }
+
+    if (
+      (patch.provider ?? current.provider) === "stripe_payment_links" &&
+      patch.billingPortalUrl &&
+      !isAllowedStripeBillingPortalUrl(patch.billingPortalUrl)
+    ) {
+      const err = new Error(
+        "Billing portal URL must be a Stripe billing portal URL"
+      ) as Error & { status?: number };
+      err.status = 422;
+      throw err;
+    }
+
+    for (const tier of TIERS) {
+      const checkoutUrl = tiers[tier]?.checkoutUrl;
+      if (checkoutUrl && !isAllowedStripePaymentLinkUrl(checkoutUrl)) {
+        const err = new Error(
+          `${tier} checkout URL must be a Stripe Payment Link`
+        ) as Error & { status?: number };
+        err.status = 422;
+        throw err;
+      }
     }
 
     const next = await savePaymentConfig(patch);

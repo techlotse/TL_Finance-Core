@@ -19,6 +19,7 @@ Required production shape:
 | Backups | `pg_dump` backup path writable, manual run tested, restore tested |
 | CI | Node 24-compatible GitHub Actions, typecheck, lint, unit tests, readiness checks, migration safety, production dependency audit, migration deploy, auth/access integration tests, build |
 | Secrets | `APP_SECRET`, DB, replication, Redis, and PgAdmin passwords replaced |
+| Origin | `APP_BASE_URL` set to the public HTTPS origin |
 
 ## Configuration
 
@@ -27,6 +28,7 @@ Required environment values:
 | Variable | Public deployment rule |
 | --- | --- |
 | `APP_SECRET` | 32+ characters, generated once, backed up offline |
+| `APP_BASE_URL` | Public `https://...` origin used in auth emails and CSRF checks |
 | `DB_PASSWORD` | Random, not `budget`, used by app and Postgres |
 | `REPLICATION_PASSWORD` | Random, only for the multinode stack |
 | `REDIS_PASSWORD` | Random, only for the multinode stack |
@@ -34,8 +36,8 @@ Required environment values:
 | `DATABASE_URL` | Must not contain `budget:budget` credentials |
 
 The production container refuses to start when `APP_SECRET` is missing,
-placeholder-like, shorter than 32 characters, or when `DATABASE_URL` still
-contains the default `budget:budget` credentials.
+placeholder-like, shorter than 32 characters, when `APP_BASE_URL` is missing,
+or when `DATABASE_URL` still contains the default `budget:budget` credentials.
 
 ## Deployment
 
@@ -69,6 +71,7 @@ Public alpha acceptance:
 | Auth | Signup, signin, signout, password reset, email verification, and SMTP test mail |
 | Access | Unverified users cannot reach app pages or non-auth APIs |
 | Tenant isolation | Protected API routes resolve an active household or admin guard; forged active-household cookies, cross-tenant mutations/deletes, and FK ownership attempts are covered by integration tests |
+| Request origin | Cross-origin unsafe browser requests are rejected by middleware |
 | Payments | Settings -> Billing can open the configured hosted checkout URL in sandbox/test mode |
 | Operations | Backups write `.sql.gz` files and restore successfully; migrations pass additive-safety checks |
 | HA | Single-node compose still runs; HA compose runs same-node or split-host LB/app/DB roles |

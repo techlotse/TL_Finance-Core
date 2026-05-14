@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This folder contains the public documentation set for TL Finance Core v0.7.3.
+This folder contains the public documentation set for TL Finance Core v0.7.5.
 The structure is intentionally grouped by module so the public repository does
 not expose stale root-level planning material.
 
@@ -68,6 +68,7 @@ Use these entry points:
 | Inspect database details | [reference/DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) |
 | Use the product | [product/USER_GUIDE.md](product/USER_GUIDE.md) |
 | Follow UI rules | [design/UI_SPEC.md](design/UI_SPEC.md) |
+| Review security audit | [review/SECURITY_AUDIT_V0_7_5.md](review/SECURITY_AUDIT_V0_7_5.md) |
 | Track releases | [release/CHANGELOG.md](release/CHANGELOG.md) |
 | Plan next work | [strategy/ROADMAP.md](strategy/ROADMAP.md) |
 

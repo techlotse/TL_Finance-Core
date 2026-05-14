@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the v0.7.3 public-alpha high-availability topology.
+This document describes the v0.7.5 public-alpha high-availability topology.
 The same release must still run as a single-node Docker app.
 
 ## Architecture
@@ -25,7 +25,7 @@ Person
 ```
 
 The DB can run on the same host as the apps, on a separate DB host, or as a
-primary plus hot standby. The app only writes to the primary in v0.7.3.
+primary plus hot standby. The app only writes to the primary in v0.7.5.
 Failover is operational/manual until a managed Postgres or automated failover
 layer is introduced.
 
@@ -102,7 +102,7 @@ external LB at each app host's `/api/health` endpoint.
 - Run `npm run test:migrations` before deployment.
 - Apply Prisma migrations once against the primary.
 - Do not edit applied migration files.
-- From v0.7.3 onward, migration SQL must be additive by default.
+- From v0.7.5 onward, migration SQL must be additive by default.
 - Restore an exported household JSON into a disposable instance before a public
   upgrade window.
 

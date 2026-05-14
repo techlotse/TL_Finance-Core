@@ -14,6 +14,19 @@ if [ "${NODE_ENV:-}" = "production" ]; then
     exit 1
   fi
 
+  case "${APP_BASE_URL:-}" in
+    http://*|https://*)
+      ;;
+    "")
+      echo "APP_BASE_URL must be set in production so auth emails use a trusted public origin." >&2
+      exit 1
+      ;;
+    *)
+      echo "APP_BASE_URL must start with http:// or https://." >&2
+      exit 1
+      ;;
+  esac
+
   case "${DATABASE_URL:-}" in
     "")
       echo "DATABASE_URL must be set in production." >&2

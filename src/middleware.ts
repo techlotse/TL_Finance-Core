@@ -17,6 +17,7 @@ import type { NextRequest } from "next/server";
  */
 
 import { SESSION_COOKIE } from "@/lib/auth-shared";
+import { isSameOriginUnsafeRequest } from "@/lib/request-origin";
 
 const PUBLIC_API_PREFIXES = ["/api/health", "/api/auth"];
 const PUBLIC_PAGES = new Set([
@@ -43,20 +44,41 @@ function isPublicPage(path: string): boolean {
   return PUBLIC_PAGE_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
 }
 
+function withSecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  return res;
+}
+
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hasSession = !!req.cookies.get(SESSION_COOKIE)?.value;
 
+  // Browser fetch/form POSTs include Origin. Reject mismatches early to add a
+  // second CSRF barrier on top of SameSite=Lax cookies while still allowing
+  // non-browser tooling that legitimately omits Origin.
+  if (UNSAFE_METHODS.has(req.method) && !isSameOriginUnsafeRequest(req.headers)) {
+    return withSecurityHeaders(
+      NextResponse.json({ error: "Cross-origin request blocked" }, { status: 403 })
+    );
+  }
+
   // API routes
   if (pathname.startsWith("/api/")) {
-    if (isPublicApi(pathname)) return NextResponse.next();
+    if (isPublicApi(pathname)) return withSecurityHeaders(NextResponse.next());
     if (!hasSession) {
-      return NextResponse.json(
-        { error: "Not authenticated" },
-        { status: 401 }
+      return withSecurityHeaders(
+        NextResponse.json(
+          { error: "Not authenticated" },
+          { status: 401 }
+        )
       );
     }
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // UI pages
@@ -65,19 +87,19 @@ export function middleware(req: NextRequest) {
     if (hasSession && (pathname === "/signin" || pathname === "/signup")) {
       const url = req.nextUrl.clone();
       url.pathname = "/";
-      return NextResponse.redirect(url);
+      return withSecurityHeaders(NextResponse.redirect(url));
     }
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   if (!hasSession) {
     const url = req.nextUrl.clone();
     url.pathname = "/signin";
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return withSecurityHeaders(NextResponse.redirect(url));
   }
 
-  return NextResponse.next();
+  return withSecurityHeaders(NextResponse.next());
 }
 
 export const config = {

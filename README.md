@@ -1,16 +1,16 @@
 # TL Finance Core - Repository Overview
 
 [![Docker Build](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml)
-[![Version](https://img.shields.io/badge/version-0.7.3-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.3)
+[![Version](https://img.shields.io/badge/version-0.7.5-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.5)
 [![License](https://img.shields.io/badge/license-Source%20Available-00D1C7)](./LICENSE)
 
 ## Purpose
 
 TL Finance Core is a Docker-first household finance application for budgeting,
 forecasting, account tracking, asset tracking, debt visibility, and investment
-projection. The v0.7.3 release keeps the public handoff feature set stable,
-adds hosted payment-link readiness, and expands HA deployment planning before
-the v0.8.0 public-alpha cut.
+projection. The v0.7.5 release keeps the public handoff feature set stable,
+adds security hardening on top of hosted payment-link readiness and HA
+deployment planning before the v0.8.0 public-alpha cut.
 
 The product is built for privacy-preserving self-hosting first. It includes
 first-party email/password authentication, PostgreSQL persistence, tenant-scoped
@@ -55,6 +55,7 @@ The required production values are:
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma |
 | `APP_SECRET` | Yes | 32+ random bytes; seals admin secrets and must be backed up |
+| `APP_BASE_URL` | Yes | Public origin used in auth emails and CSRF origin checks |
 | `EXCHANGE_RATE_PROVIDER` | No | Defaults to `frankfurter` |
 | `FRANKFURTER_BASE_URL` | No | Defaults to `https://api.frankfurter.app` |
 | `DB_PASSWORD` | Multinode/HA | PostgreSQL password for the HA compose stack |
@@ -132,7 +133,7 @@ Public documentation:
 - If the multinode database does not initialize, verify shell scripts are LF
   and that the postgres `command:` remains YAML list form.
 - The PostgreSQL replica is available for standby/failover, but Prisma reads
-  and writes through the primary in v0.7.3.
+  and writes through the primary in v0.7.5.
 - SMTP delivery and hosted payment-link setup are available through admin
   configuration. Scheduled backup execution, S3-compatible upload, and payment
   webhook fulfillment remain roadmap items.

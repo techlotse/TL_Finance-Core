@@ -9,6 +9,7 @@ import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/logger";
 import { sendMail } from "@/lib/mailer";
 import { assertAuditRateLimit } from "@/lib/rate-limit";
+import { publicAppOrigin } from "@/lib/request-origin";
 
 const RESET_TTL_HOURS = 2;
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
         data: { tokenHash, userId: user.id, expiresAt }
       });
 
-      const resetUrl = `${getOrigin(req)}/reset-password/${token}`;
+      const resetUrl = `${publicAppOrigin(req.headers)}/reset-password/${token}`;
 
       // Always attempt to send. Mailer falls back to stdout-log when no
       // provider is configured — keeps the dev / first-boot loop visible
@@ -62,8 +63,8 @@ export async function POST(req: NextRequest) {
         log.warn("password reset: mail not delivered", {
           userId: user.id,
           reason: result.reason,
-          // Logged so the operator can hand over manually if SMTP is down.
-          resetUrl
+          // Never put bearer reset links in production logs.
+          ...(process.env.NODE_ENV === "production" ? {} : { resetUrl })
         });
       }
       // cfg is still read for visibility into provider state in audit metadata.
@@ -92,10 +93,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return handleApiError(err);
   }
-}
-
-function getOrigin(req: NextRequest): string {
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  const host = req.headers.get("host") || "localhost";
-  return `${proto}://${host}`;
 }
