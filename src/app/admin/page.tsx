@@ -116,6 +116,22 @@ export default async function AdminOverviewPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-sm">Payments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-base font-medium">
+            {cfg.paymentConfig.enabled ? "Enabled" : "Disabled"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {cfg.paymentConfig.provider === "stripe_payment_links"
+              ? "Stripe Payment Links configured for public alpha."
+              : "No payment provider configured."}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-sm">Last audit event</CardTitle>
         </CardHeader>
         <CardContent>

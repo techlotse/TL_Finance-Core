@@ -19,6 +19,8 @@ Release plan:
 | v0.5.0 | Current public handoff baseline |
 | v0.6.0 | User separation, active-household selection, and access tests |
 | v0.7.0 | Authentication, reset/verification, rate-limit, admin, and access security hardening |
+| v0.7.3 | Public-alpha preparation: admin payments, HA role files, v0.8 readiness checks |
+| v0.7.5 | Security audit fixes, trusted public origin, CSRF guard, and destructive-import confirmation |
 | v0.8.0 | Public alpha, HA deployment, payment provider for SaaS version |
 | v0.9.0 | Bug fixes and public beta readiness |
 | v1.0.0 | Stable public release with the v0.5.0 feature set preserved |
@@ -37,6 +39,8 @@ Planning gates:
 | --- | --- |
 | v0.6.0 | A user cannot access another user's household data and can intentionally choose an active household where supported |
 | v0.7.0 | Auth, sessions, verification, rate limits, reset flows, and admin access are security-reviewed |
+| v0.7.3 | Public-alpha readiness checks exist for payments, HA topology, migration safety, and backup import compatibility |
+| v0.7.5 | Security audit check passes and production auth links use only the configured public origin |
 | v0.8.0 | Public alpha can accept payments and survive single app-node failure |
 | v0.9.0 | Known alpha defects are fixed and beta onboarding is documented |
 | v1.0.0 | Docs, deploy path, backup/restore, and access model are stable |

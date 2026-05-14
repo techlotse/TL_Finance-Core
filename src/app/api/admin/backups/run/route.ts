@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const ctx = await requireAdminApi();
     const result = await runBackup();
     await writeAudit({
-      action: "admin_config_update",
+      action: "backup_run",
       userId: ctx.user.id,
       resourceType: "backup_run",
       resourceId: result.path ?? "(none)",

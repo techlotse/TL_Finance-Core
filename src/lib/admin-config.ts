@@ -53,11 +53,30 @@ export interface AiConfig {
   apiKeyCipher?: string | null;
 }
 
+export type PaymentTier = "core" | "smart" | "ai";
+
+export interface PaymentTierConfig {
+  enabled: boolean;
+  displayName: string;
+  priceLabel?: string;
+  summary?: string;
+  checkoutUrl?: string;
+}
+
+export interface PaymentConfig {
+  enabled: boolean;
+  provider: "none" | "stripe_payment_links";
+  billingPortalUrl?: string;
+  supportEmail?: string;
+  tiers: Record<PaymentTier, PaymentTierConfig>;
+}
+
 export interface AdminConfigShape {
   authConfig: AuthConfig;
   mailConfig: MailConfig;
   backupConfig: BackupConfig;
   aiConfig: AiConfig;
+  paymentConfig: PaymentConfig;
   observability: ObservabilityConfig;
 }
 
@@ -76,6 +95,31 @@ const DEFAULT_AI: AiConfig = {
   provider: "openai",
   model: "gpt-5.4-mini"
 };
+export const DEFAULT_PAYMENT_TIERS: Record<PaymentTier, PaymentTierConfig> = {
+  core: {
+    enabled: true,
+    displayName: "TL Finance Core",
+    priceLabel: "Free",
+    summary: "Local household budgeting and forecasting."
+  },
+  smart: {
+    enabled: false,
+    displayName: "TL Finance Smart",
+    priceLabel: "",
+    summary: "Prepared upgrade tier for public alpha."
+  },
+  ai: {
+    enabled: false,
+    displayName: "TL Finance AI",
+    priceLabel: "",
+    summary: "AI-assisted advice tier when OpenAI advice is enabled."
+  }
+};
+const DEFAULT_PAYMENT: PaymentConfig = {
+  enabled: false,
+  provider: "none",
+  tiers: DEFAULT_PAYMENT_TIERS
+};
 const DEFAULT_OBSERVABILITY: ObservabilityConfig = { logLevel: "info" };
 
 const SINGLETON_ID = "singleton";
@@ -90,15 +134,25 @@ export async function loadAdminConfig(): Promise<AdminConfigShape> {
         mailConfig: DEFAULT_MAIL as object,
         backupConfig: DEFAULT_BACKUP as object,
         aiConfig: DEFAULT_AI as object,
+        paymentConfig: DEFAULT_PAYMENT as object,
         observability: DEFAULT_OBSERVABILITY as object
       }
     });
   }
+  const paymentConfig = {
+    ...DEFAULT_PAYMENT,
+    ...((row.paymentConfig as object) || {}),
+    tiers: {
+      ...DEFAULT_PAYMENT_TIERS,
+      ...(((row.paymentConfig as { tiers?: object } | null)?.tiers as object) || {})
+    }
+  } as PaymentConfig;
   return {
     authConfig: { ...DEFAULT_AUTH, ...((row.authConfig as object) || {}) } as AuthConfig,
     mailConfig: { ...DEFAULT_MAIL, ...((row.mailConfig as object) || {}) } as MailConfig,
     backupConfig: { ...DEFAULT_BACKUP, ...((row.backupConfig as object) || {}) } as BackupConfig,
     aiConfig: { ...DEFAULT_AI, ...((row.aiConfig as object) || {}) } as AiConfig,
+    paymentConfig,
     observability: {
       ...DEFAULT_OBSERVABILITY,
       ...((row.observability as object) || {})
@@ -120,6 +174,7 @@ async function patchSegment<K extends keyof AdminConfigShape>(
       mailConfig: cur.mailConfig as object,
       backupConfig: cur.backupConfig as object,
       aiConfig: cur.aiConfig as object,
+      paymentConfig: cur.paymentConfig as object,
       observability: cur.observability as object,
       [segment]: next as object
     },
@@ -136,6 +191,8 @@ export const saveBackupConfig = (p: Partial<BackupConfig>) =>
   patchSegment("backupConfig", p);
 export const saveAiConfig = (p: Partial<AiConfig>) =>
   patchSegment("aiConfig", p);
+export const savePaymentConfig = (p: Partial<PaymentConfig>) =>
+  patchSegment("paymentConfig", p);
 export const saveObservabilityConfig = (p: Partial<ObservabilityConfig>) =>
   patchSegment("observability", p);
 
@@ -181,6 +238,7 @@ export interface PublicAdminConfig {
     apiKeyPreview: string;
     apiKeySet: boolean;
   };
+  paymentConfig: PaymentConfig;
   observability: ObservabilityConfig;
 }
 
@@ -206,6 +264,7 @@ export async function loadPublicAdminConfig(): Promise<PublicAdminConfig> {
       apiKeyPreview: redactedPreview(apiKeyCipher),
       apiKeySet: !!apiKeyCipher
     },
+    paymentConfig: cfg.paymentConfig,
     observability: cfg.observability
   };
 }

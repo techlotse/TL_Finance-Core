@@ -165,6 +165,7 @@ model AdminConfig {
   backupConfig  Json     @default("{}")
   mailConfig    Json     @default("{}")
   aiConfig      Json     @default("{}")
+  paymentConfig Json     @default("{}")
   observability Json     @default("{}")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

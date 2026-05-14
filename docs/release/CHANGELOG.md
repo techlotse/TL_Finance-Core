@@ -31,6 +31,52 @@ branch, SHA, semver, and latest tags when configured with Docker Hub secrets.
 
 No public changes yet.
 
+## v0.7.5 - 2026-05-13
+
+Security audit and hardening.
+
+Changed:
+
+- Added `APP_BASE_URL` as a required production setting so password-reset and
+  verification emails do not trust request `Host` headers.
+- Added middleware-level same-origin checks for unsafe browser requests and
+  baseline security headers for app responses.
+- Stopped production fallback mail/auth logs from including bearer reset or
+  verification links.
+- Sanitized sign-in `next` redirects to local paths only.
+- Restricted public-alpha Stripe checkout and billing portal URLs to Stripe
+  hosted domains and revalidated before redirecting users.
+- Required server-side typed confirmation for destructive household replace
+  imports.
+- Made first-user admin assignment run inside a serializable transaction.
+- Added `npm run test:security` to CI.
+- Added focused tests for trusted origin handling, redirect sanitization, and
+  payment URL allowlists.
+
+## v0.7.3 - 2026-05-13
+
+Public-alpha preparation.
+
+Changed:
+
+- Kept SaaS administration under the protected `/admin` endpoint and added a
+  Payments section for public-alpha billing setup.
+- Added admin-managed hosted payment-link configuration and a user-facing
+  Settings -> Billing workflow backed by `POST /api/billing/checkout`.
+- Added hosted checkout URL generation with `prefilled_email`,
+  `client_reference_id`, and alpha UTM parameters for reconciliation.
+- Added a v0.8 readiness check suite covering admin isolation, payments,
+  HA deployment assets, migration safety, route guards, and backup import
+  compatibility.
+- Added a migration additive-safety check to reject destructive migration SQL
+  in CI.
+- Added `docker-compose.ha.yml` plus an NGINX template for same-node or
+  split-host LB/app/DB role deployments.
+- Documented HA deployment across separate LB, web, DB primary, and DB replica
+  hosts.
+- Changed household import API compatibility to accept older supported export
+  versions instead of only the current export version.
+
 ## v0.7.0 - 2026-05-13
 
 Authentication and access security hardening.

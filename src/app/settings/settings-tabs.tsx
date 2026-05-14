@@ -6,17 +6,25 @@ import {
   Users,
   FolderTree,
   Sliders,
-  Database
+  Database,
+  CreditCard
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TabId = "household" | "earners" | "categories" | "preferences" | "backup";
+type TabId =
+  | "household"
+  | "earners"
+  | "categories"
+  | "preferences"
+  | "billing"
+  | "backup";
 
 const TABS: Array<{ id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: "household", label: "Household", icon: Home },
   { id: "earners", label: "Income earners", icon: Users },
   { id: "categories", label: "Categories", icon: FolderTree },
   { id: "preferences", label: "Preferences", icon: Sliders },
+  { id: "billing", label: "Billing", icon: CreditCard },
   { id: "backup", label: "Backup status", icon: Database }
 ];
 
@@ -35,12 +43,14 @@ export function SettingsTabs({
   earners,
   categories,
   preferences,
+  billing,
   backup
 }: {
   household: React.ReactNode;
   earners: React.ReactNode;
   categories: React.ReactNode;
   preferences: React.ReactNode;
+  billing: React.ReactNode;
   backup: React.ReactNode;
 }) {
   const [active, setActive] = React.useState<TabId>("household");
@@ -104,6 +114,7 @@ export function SettingsTabs({
         {active === "earners" && earners}
         {active === "categories" && categories}
         {active === "preferences" && preferences}
+        {active === "billing" && billing}
         {active === "backup" && backup}
       </div>
     </div>

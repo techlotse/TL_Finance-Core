@@ -9,10 +9,14 @@ import {
 import { writeAudit } from "@/lib/audit";
 import { ipHashFromHeaders } from "@/lib/auth";
 
+const REPLACE_CONFIRMATION = "DELETE CURRENT HOUSEHOLD DATA";
+
 /**
  * POST /api/household/import
  *
- * Body: { payload: HouseholdExport, mode?: "merge" | "replace" }
+ * Body:
+ *   { payload: HouseholdExport, mode?: "merge" | "replace",
+ *     confirmReplace?: "DELETE CURRENT HOUSEHOLD DATA" }
  *
  * "merge" (default) is non-destructive — existing rows are matched by name
  * and only new rows are created. "replace" hard-deletes everything in the
@@ -25,6 +29,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       payload?: HouseholdExport;
       mode?: "merge" | "replace";
+      confirmReplace?: string;
     };
 
     if (!body.payload) {
@@ -35,13 +40,19 @@ export async function POST(req: NextRequest) {
     if (typeof payload !== "object" || typeof payload.version !== "number") {
       return jsonError("Payload doesn't look like a valid household export", 422);
     }
-    if (payload.version !== HOUSEHOLD_EXPORT_VERSION) {
+    if (payload.version > HOUSEHOLD_EXPORT_VERSION) {
       return jsonError(
-        `Export version ${payload.version} is not supported (expected v${HOUSEHOLD_EXPORT_VERSION})`,
+        `Export version ${payload.version} is newer than this instance supports (current v${HOUSEHOLD_EXPORT_VERSION})`,
         422
       );
     }
     const mode = body.mode === "replace" ? "replace" : "merge";
+    if (mode === "replace" && body.confirmReplace !== REPLACE_CONFIRMATION) {
+      return jsonError(
+        `Replace imports require confirmReplace="${REPLACE_CONFIRMATION}"`,
+        422
+      );
+    }
 
     const result = await importHousehold(householdId, payload, mode);
 
@@ -53,6 +64,7 @@ export async function POST(req: NextRequest) {
       ipHash: ipHashFromHeaders(req.headers),
       metadata: {
         mode,
+        replaceConfirmed: mode === "replace",
         ...result
       }
     });

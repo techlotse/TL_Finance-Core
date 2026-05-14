@@ -1,22 +1,22 @@
 # TL Finance Core - Repository Overview
 
-[![Docker Build](https://github.com/techlotse/TL_Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL_Finance-Core/actions/workflows/docker-publish.yml)
-[![Version](https://img.shields.io/badge/version-0.7.0-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.0)
+[![Docker Build](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml)
+[![Version](https://img.shields.io/badge/version-0.7.5-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.5)
 [![License](https://img.shields.io/badge/license-Source%20Available-00D1C7)](./LICENSE)
 
 ## Purpose
 
 TL Finance Core is a Docker-first household finance application for budgeting,
 forecasting, account tracking, asset tracking, debt visibility, and investment
-projection. The v0.7.0 release keeps the public handoff feature set stable and
-hardens authentication, reset, verification, admin, and tenant-isolation paths
-with database-backed security tests.
+projection. The v0.7.5 release keeps the public handoff feature set stable,
+adds security hardening on top of hosted payment-link readiness and HA
+deployment planning before the v0.8.0 public-alpha cut.
 
 The product is built for privacy-preserving self-hosting first. It includes
 first-party email/password authentication, PostgreSQL persistence, tenant-scoped
 household data, active household switching, rate-limited auth flows, audit
-logging, portable JSON import/export, and a dark-mode first interface aligned
-to TL Finance Core Style Guide v1.0.
+logging, portable JSON import/export, public-alpha billing setup, and a
+dark-mode first interface aligned to TL Finance Core Style Guide v1.0.
 
 ## Architecture
 
@@ -55,10 +55,11 @@ The required production values are:
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma |
 | `APP_SECRET` | Yes | 32+ random bytes; seals admin secrets and must be backed up |
+| `APP_BASE_URL` | Yes | Public origin used in auth emails and CSRF origin checks |
 | `EXCHANGE_RATE_PROVIDER` | No | Defaults to `frankfurter` |
 | `FRANKFURTER_BASE_URL` | No | Defaults to `https://api.frankfurter.app` |
-| `DB_PASSWORD` | Multinode | PostgreSQL password for the HA compose stack |
-| `REPLICATION_PASSWORD` | Multinode | PostgreSQL streaming replication password |
+| `DB_PASSWORD` | Multinode/HA | PostgreSQL password for the HA compose stack |
+| `REPLICATION_PASSWORD` | Multinode/HA | PostgreSQL streaming replication password |
 | `REDIS_PASSWORD` | Multinode | Password for the bundled Redis service |
 
 The active style contract is dark mode first (`#0B0F14`), purple to cyan
@@ -91,6 +92,11 @@ Windows PowerShell can use `.\setup-local.ps1` instead of `./setup-local.sh`.
 Open `http://localhost:3000` for single node or `https://localhost` for the
 nginx multinode stack.
 
+Public-alpha HA roles are documented in
+[docs/operations/HA_DEPLOYMENT.md](docs/operations/HA_DEPLOYMENT.md). The
+bundled `docker-compose.ha.yml` can run same-node HA or split LB, app, and DB
+roles across private hosts.
+
 ## Usage
 
 1. Sign up. The first user becomes the instance administrator.
@@ -98,7 +104,7 @@ nginx multinode stack.
 3. Add accounts and current balances.
 4. Add income, expenses, investment contributions, transfers, and assets.
 5. Use Dashboard, Forecast, Debt, and Investments to inspect current state and projections.
-6. Use Settings to export/import household JSON and Admin to manage auth, mail, backups, observability, and audit retention.
+6. Use Settings to export/import household JSON and Admin to manage auth, mail, payments, backups, observability, and audit retention.
 
 Public documentation:
 
@@ -127,6 +133,7 @@ Public documentation:
 - If the multinode database does not initialize, verify shell scripts are LF
   and that the postgres `command:` remains YAML list form.
 - The PostgreSQL replica is available for standby/failover, but Prisma reads
-  and writes through the primary in v0.7.0.
-- SMTP delivery is available through the admin mail configuration. Scheduled
-  backup execution and S3-compatible upload remain roadmap items.
+  and writes through the primary in v0.7.5.
+- SMTP delivery and hosted payment-link setup are available through admin
+  configuration. Scheduled backup execution, S3-compatible upload, and payment
+  webhook fulfillment remain roadmap items.

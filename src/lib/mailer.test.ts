@@ -40,6 +40,7 @@ const message = {
 
 describe("sendMail", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     state.cfg = {
       mailConfig: { provider: "none" }
     };
@@ -61,8 +62,19 @@ describe("sendMail", () => {
     });
     expect(state.createTransport).not.toHaveBeenCalled();
     expect(state.logWarn).toHaveBeenCalledWith(
-      "mailer: provider not configured; logging mail to stdout",
+      "mailer: provider not configured",
       expect.objectContaining({ to: message.to, body: message.text })
+    );
+  });
+
+  it("does not log message bodies in production fallback mode", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    await sendMail(message);
+
+    expect(state.logWarn).toHaveBeenCalledWith(
+      "mailer: provider not configured",
+      expect.not.objectContaining({ body: message.text })
     );
   });
 

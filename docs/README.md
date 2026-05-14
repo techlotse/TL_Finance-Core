@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This folder contains the public documentation set for TL Finance Core v0.5.0.
+This folder contains the public documentation set for TL Finance Core v0.7.5.
 The structure is intentionally grouped by module so the public repository does
 not expose stale root-level planning material.
 
@@ -59,6 +59,8 @@ Use these entry points:
 | Need | Document |
 | --- | --- |
 | Run the system | [operations/DEPLOYMENT.md](operations/DEPLOYMENT.md) |
+| Deploy HA roles | [operations/HA_DEPLOYMENT.md](operations/HA_DEPLOYMENT.md) |
+| Configure payment alpha | [operations/PAYMENTS_ALPHA.md](operations/PAYMENTS_ALPHA.md) |
 | Prepare public deployment | [operations/PUBLIC_DEPLOYMENT_CHECKLIST.md](operations/PUBLIC_DEPLOYMENT_CHECKLIST.md) |
 | Understand the stack | [architecture/ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
 | Understand stored data | [architecture/DATA_MODEL.md](architecture/DATA_MODEL.md) |
@@ -66,6 +68,7 @@ Use these entry points:
 | Inspect database details | [reference/DATABASE_SCHEMA.md](reference/DATABASE_SCHEMA.md) |
 | Use the product | [product/USER_GUIDE.md](product/USER_GUIDE.md) |
 | Follow UI rules | [design/UI_SPEC.md](design/UI_SPEC.md) |
+| Review security audit | [review/SECURITY_AUDIT_V0_7_5.md](review/SECURITY_AUDIT_V0_7_5.md) |
 | Track releases | [release/CHANGELOG.md](release/CHANGELOG.md) |
 | Plan next work | [strategy/ROADMAP.md](strategy/ROADMAP.md) |
 

@@ -48,6 +48,7 @@ for (const [name, text] of [
   ["multinode compose", multinode]
 ]) {
   assert(`${name} requires APP_SECRET`, text.includes("${APP_SECRET:?"));
+  assert(`${name} requires APP_BASE_URL`, text.includes("${APP_BASE_URL:?"));
   assert(`${name} requires DB_PASSWORD`, text.includes("${DB_PASSWORD:?"));
   assert(`${name} has no APP_SECRET fallback`, !text.includes("change-me"));
   assert(`${name} has no default DB password fallback`, !text.includes(":-budget"));

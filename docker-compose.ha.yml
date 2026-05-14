@@ -1,0 +1,156 @@
+# ---------------------------------------------------------------------------
+# TL Finance Core - public-alpha HA roles
+#
+# This compose file can run as:
+#   - same-node HA: lb + app + db-primary + db-replica profiles together
+#   - split hosts: run lb, app, db-primary, and db-replica profiles on
+#     separate servers with private IPs in DATABASE_URL / upstream env vars
+#
+# It intentionally keeps the application stateless. Sessions, admin config,
+# audit logs, backups metadata, and household data are all stored in Postgres.
+# ---------------------------------------------------------------------------
+
+services:
+  nginx:
+    image: nginx:alpine
+    profiles: ["lb"]
+    ports:
+      - "${TLFC_HTTP_PORT:-80}:80"
+    environment:
+      TLFC_APP_UPSTREAM_1: ${TLFC_APP_UPSTREAM_1:-app-1:3000}
+      TLFC_APP_UPSTREAM_2: ${TLFC_APP_UPSTREAM_2:-app-2:3000}
+    volumes:
+      - ./deploy/ha/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  app-1:
+    image: ${TLFC_IMAGE:-tl-finance-core:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["app"]
+    ports:
+      - "${TLFC_APP_1_BIND:-127.0.0.1}:${TLFC_APP_1_PORT:-3001}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the writable PostgreSQL primary}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
+      EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
+      FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
+      BACKUP_DIR: /var/backups/tl-finance-core
+      HOSTNAME: app-1
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - app_backups:/var/backups/tl-finance-core
+
+  app-2:
+    image: ${TLFC_IMAGE:-tl-finance-core:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["app"]
+    ports:
+      - "${TLFC_APP_2_BIND:-127.0.0.1}:${TLFC_APP_2_PORT:-3002}:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL to the writable PostgreSQL primary}
+      APP_SECRET: ${APP_SECRET:?Set APP_SECRET in .env}
+      APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in .env}
+      EXCHANGE_RATE_PROVIDER: ${EXCHANGE_RATE_PROVIDER:-frankfurter}
+      FRANKFURTER_BASE_URL: ${FRANKFURTER_BASE_URL:-https://api.frankfurter.app}
+      BACKUP_DIR: /var/backups/tl-finance-core
+      HOSTNAME: app-2
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - app_backups:/var/backups/tl-finance-core
+
+  postgres-primary:
+    image: postgres:16-alpine
+    profiles: ["db-primary"]
+    ports:
+      - "${TLFC_DB_BIND:-127.0.0.1}:${TLFC_DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: budget
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      POSTGRES_DB: budget
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Set REPLICATION_PASSWORD in .env}
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./postgres/init-primary.sh:/docker-entrypoint-initdb.d/01-init-primary.sh:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget -d budget"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  postgres-replica:
+    image: postgres:16-alpine
+    profiles: ["db-replica"]
+    user: postgres
+    entrypoint: ["/bin/sh", "/scripts/init-replica.sh"]
+    ports:
+      - "${TLFC_DB_REPLICA_BIND:-127.0.0.1}:${TLFC_DB_REPLICA_PORT:-5433}:5432"
+    environment:
+      POSTGRES_PRIMARY_HOST: ${POSTGRES_PRIMARY_HOST:-postgres-primary}
+      REPLICATION_USER: replicator
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:?Set REPLICATION_PASSWORD in .env}
+    volumes:
+      - postgres_replica_data:/var/lib/postgresql/data
+      - ./postgres/init-replica.sh:/scripts/init-replica.sh:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budget -d budget"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+volumes:
+  postgres_primary_data:
+    driver: local
+  postgres_replica_data:
+    driver: local
+  app_backups:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

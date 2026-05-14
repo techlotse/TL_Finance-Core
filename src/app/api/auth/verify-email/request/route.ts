@@ -8,6 +8,7 @@ import { log } from "@/lib/logger";
 import { sendMail } from "@/lib/mailer";
 import { loadAdminConfig } from "@/lib/admin-config";
 import { assertAuditRateLimit } from "@/lib/rate-limit";
+import { publicAppOrigin } from "@/lib/request-origin";
 
 const VERIFY_TTL_HOURS = 24;
 
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       data: { tokenHash, userId: ctx.user.id, expiresAt }
     });
 
-    const verifyUrl = `${getOrigin(req)}/verify-email/${token}`;
+    const verifyUrl = `${publicAppOrigin(req.headers)}/verify-email/${token}`;
 
     const result = await sendMail({
       to: ctx.user.email,
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       log.warn("email verification: mail not delivered", {
         userId: ctx.user.id,
         reason: result.reason,
-        verifyUrl
+        ...(process.env.NODE_ENV === "production" ? {} : { verifyUrl })
       });
     }
 
@@ -82,10 +83,4 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return handleApiError(err);
   }
-}
-
-function getOrigin(req: NextRequest): string {
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  const host = req.headers.get("host") || "localhost";
-  return `${proto}://${host}`;
 }
