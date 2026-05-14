@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the v0.7.5 public-alpha high-availability topology.
+This document describes the v0.7.6 public-alpha high-availability topology.
 The same release must still run as a single-node Docker app.
 
 ## Architecture
@@ -25,7 +25,7 @@ Person
 ```
 
 The DB can run on the same host as the apps, on a separate DB host, or as a
-primary plus hot standby. The app only writes to the primary in v0.7.5.
+primary plus hot standby. The app only writes to the primary in v0.7.6.
 Failover is operational/manual until a managed Postgres or automated failover
 layer is introduced.
 

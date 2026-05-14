@@ -3,7 +3,7 @@
 ## Purpose
 
 This document records the current PostgreSQL schema shape and migration policy
-for TL Finance Core v0.7.5.
+for TL Finance Core v0.7.6.
 
 ## Architecture
 

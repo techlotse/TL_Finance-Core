@@ -1,6 +1,6 @@
 {
   "name": "tl-finance-core",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,8 +15,10 @@
     "test:readiness:v0.8": "node scripts/v0.8-readiness-check.mjs",
     "test:migrations": "node scripts/check-migrations-additive.mjs",
     "test:security": "node scripts/security-audit-check.mjs",
+    "test:release": "node scripts/release-notes.mjs --check",
+    "release:notes": "node scripts/release-notes.mjs --out .release-notes.md",
     "audit:prod": "npm audit --omit=dev",
-    "ci": "npm run prisma:generate && npm run typecheck && npm run lint && npm run test && npm run test:readiness && npm run test:readiness:v0.8 && npm run test:migrations && npm run test:security && npm run audit:prod && npm run prisma:deploy && npm run test:access && npm run build",
+    "ci": "npm run prisma:generate && npm run typecheck && npm run lint && npm run test && npm run test:readiness && npm run test:readiness:v0.8 && npm run test:migrations && npm run test:security && npm run test:release && npm run audit:prod && npm run prisma:deploy && npm run test:access && npm run build",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",

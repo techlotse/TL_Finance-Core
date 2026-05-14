@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes how to run TL Finance Core v0.7.5 locally, in Docker,
+This document describes how to run TL Finance Core v0.7.6 locally, in Docker,
 in the bundled multinode Docker Desktop topology, and in the public-alpha HA
 role topology.
 
@@ -116,6 +116,7 @@ Operational commands:
 | Start PgAdmin | `docker compose -f docker-compose-multinode.yml --profile tools up -d pgadmin` |
 | HA readiness | `npm run test:readiness:v0.8` |
 | Migration safety | `npm run test:migrations` |
+| Release readiness | `npm run test:release` |
 
 Backups:
 
@@ -138,7 +139,7 @@ Payments:
 
 - Configure public-alpha payment links in Admin -> Payments.
 - The user-facing flow appears under Settings -> Billing.
-- v0.7.5 redirects to hosted payment links only; webhook fulfillment is a
+- v0.7.6 redirects to hosted payment links only; webhook fulfillment is a
   v0.8.0 readiness item. See [PAYMENTS_ALPHA.md](PAYMENTS_ALPHA.md).
 
 ## Troubleshooting
