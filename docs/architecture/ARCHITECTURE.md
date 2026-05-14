@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the runtime architecture for TL Finance Core v0.7.5.
+This document describes the runtime architecture for TL Finance Core v0.7.6.
 It is the source document for contributors who need to understand how requests,
 data, money calculations, and security boundaries move through the system.
 
@@ -105,4 +105,4 @@ When adding features:
   `householdId` filters or missing ownership assertions.
 - If forecast totals drift, check whether amounts crossed a server-to-client
   boundary as JSON numbers instead of strings.
-- Redis is present in the multinode stack but is not the v0.7.5 session store.
+- Redis is present in the multinode stack but is not the v0.7.6 session store.

@@ -6,6 +6,7 @@ node_modules
 dist
 coverage
 tsconfig.tsbuildinfo
+.release-notes.md
 .DS_Store
 prisma/dev.db
 src/generated/prisma

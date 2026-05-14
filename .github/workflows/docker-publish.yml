@@ -1,7 +1,7 @@
 name: Build and push Docker image
 
 # Triggers:
-#   - push to main           → build, and publish :latest / :<sha> when Docker Hub secrets exist
+#   - push to main           → verify, build, optionally publish Docker tags, then create a GitHub Release
 #   - tag matching v*.*.*    → build, and publish semver tags when Docker Hub secrets exist
 #   - manual dispatch        → build, and publish :<sha> when Docker Hub secrets exist
 on:
@@ -12,6 +12,10 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   IMAGE_NAME: tl-finance-core
@@ -70,6 +74,9 @@ jobs:
       - name: Public readiness checks
         run: npm run test:readiness
 
+      - name: Release notes and automation check
+        run: npm run test:release
+
       - name: Production dependency audit
         run: npm run audit:prod
 
@@ -82,9 +89,73 @@ jobs:
       - name: Build
         run: npm run build
 
-  docker:
+  release-plan:
     runs-on: ubuntu-latest
     needs: verify
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      major: ${{ steps.version.outputs.major }}
+      major_minor: ${{ steps.version.outputs.major_minor }}
+      release_needed: ${{ steps.version.outputs.release_needed }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          version="$(node -p "require('./package.json').version")"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::package.json version must be plain semver, got ${version}"
+            exit 1
+          fi
+
+          IFS=. read -r major minor patch <<< "$version"
+          tag="v${version}"
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "major=${major}" >> "$GITHUB_OUTPUT"
+          echo "major_minor=${major}.${minor}" >> "$GITHUB_OUTPUT"
+
+          npm run test:release
+
+          release_needed=false
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+              echo "::notice::${tag} already exists; skipping GitHub Release creation."
+            elif gh release view "${tag}" >/dev/null 2>&1; then
+              echo "::notice::GitHub Release ${tag} already exists; skipping release creation."
+            else
+              release_needed=true
+            fi
+          fi
+
+          echo "release_needed=${release_needed}" >> "$GITHUB_OUTPUT"
+
+  docker:
+    runs-on: ubuntu-latest
+    needs:
+      - verify
+      - release-plan
     if: github.event_name != 'pull_request'
 
     env:
@@ -133,11 +204,18 @@ jobs:
           # Build a useful tag set for v1 release plus everyday CI:
           #   - branch builds  → :main / :latest
           #   - sha            → :<sha>
+          #   - main releases  → package version tags when the GitHub release is new
+          # GitHub-token-created release tags do not fan out to a second workflow,
+          # so the verified main build publishes the release Docker tags directly.
           #   - semver tags    → :v1.2.3, :1.2.3, :1.2, :1, :latest
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=sha,prefix=
+            type=raw,value=${{ needs.release-plan.outputs.version }},enable=${{ needs.release-plan.outputs.release_needed == 'true' }}
+            type=raw,value=${{ needs.release-plan.outputs.major_minor }},enable=${{ needs.release-plan.outputs.release_needed == 'true' }}
+            type=raw,value=${{ needs.release-plan.outputs.major }},enable=${{ needs.release-plan.outputs.release_needed == 'true' }}
+            type=raw,value=${{ needs.release-plan.outputs.tag }},enable=${{ needs.release-plan.outputs.release_needed == 'true' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -167,3 +245,38 @@ jobs:
           tags: local/${{ env.IMAGE_NAME }}:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs:
+      - release-plan
+      - docker
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.release-plan.outputs.release_needed == 'true'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Generate release notes
+        run: node scripts/release-notes.mjs --out "$RUNNER_TEMP/release-notes.md"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ needs.release-plan.outputs.tag }}" \
+            --target "${GITHUB_SHA}" \
+            --title "${{ needs.release-plan.outputs.tag }}" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"

@@ -41,6 +41,14 @@ assert(
   dockerfile.includes("postgresql-client")
 );
 
+const pkg = JSON.parse(read("package.json"));
+assert("CI includes release readiness check", pkg.scripts.ci.includes("test:release"));
+
+const releaseWorkflow = read(".github/workflows/docker-publish.yml");
+assert("GitHub workflow creates releases after main verification", releaseWorkflow.includes("github-release:"));
+assert("GitHub releases use the package changelog entry", releaseWorkflow.includes("scripts/release-notes.mjs --out"));
+assert("Release Docker build includes package semver tags", releaseWorkflow.includes("type=raw,value=${{ needs.release-plan.outputs.version }}"));
+
 const compose = read("docker-compose.yml");
 const multinode = read("docker-compose-multinode.yml");
 for (const [name, text] of [

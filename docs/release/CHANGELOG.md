@@ -16,20 +16,40 @@ Release metadata should be updated in:
 | File | Value |
 | --- | --- |
 | `package.json` | `name`, `version` |
+| `package-lock.json` | locked package `version` |
 | `README.md` | visible version badge and repository links |
 | `.github/workflows/docker-publish.yml` | Docker image name |
 | `docs/release/CHANGELOG.md` | release notes |
 
 ## Deployment
 
-Tag releases with `v<major>.<minor>.<patch>`. The Docker workflow publishes
-branch, SHA, semver, and latest tags when configured with Docker Hub secrets.
+Releases use the `v<major>.<minor>.<patch>` tag format. After a successful
+merge to `main`, the Docker workflow verifies the project, builds the image,
+publishes branch/SHA/latest tags when Docker Hub secrets exist, and creates a
+GitHub Release for the current `package.json` version if that tag does not
+already exist. New main releases also publish package semver Docker tags when
+Docker Hub publishing is enabled.
 
 ## Usage
 
 ## Unreleased
 
 No public changes yet.
+
+## v0.7.6 - 2026-05-14
+
+Release automation.
+
+Changed:
+
+- Added automatic GitHub Release creation after a successful verified build on
+  `main`.
+- Made release creation idempotent by skipping versions whose `vX.Y.Z` tag or
+  GitHub Release already exists.
+- Added package-version Docker semver tags to the successful main build that
+  creates a new release.
+- Added `npm run test:release` to validate the current changelog entry and
+  release workflow hooks before CI can publish.
 
 ## v0.7.5 - 2026-05-13
 
