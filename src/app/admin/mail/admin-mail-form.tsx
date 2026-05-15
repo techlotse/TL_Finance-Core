@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/label";
+import { apiErrorMessage, readApiObject } from "@/lib/client-response";
 
 interface MailConfig {
   provider: "smtp" | "none";
@@ -56,9 +57,9 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Save failed");
-      if (json.value) setCfg(json.value);
+      const json = await readApiObject(res, "/api/admin/config/mail");
+      if (!res.ok) throw new Error(apiErrorMessage(json, "Save failed"));
+      if (json.value) setCfg(json.value as MailConfig);
       setSavedAt(new Date());
       setNewPassword("");
       return true;
@@ -83,15 +84,19 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({})
       });
-      const json = await res.json();
+      const json = await readApiObject(res, "/api/admin/config/mail/test");
       if (!res.ok) {
+        const details =
+          json.details && typeof json.details === "object"
+            ? (json.details as Record<string, unknown>)
+            : null;
         throw new Error(
-          json.details?.reason
-            ? `Test email failed: ${json.details.reason}`
-            : json.error || "Test email failed"
+          typeof details?.reason === "string"
+            ? `Test email failed: ${details.reason}`
+            : apiErrorMessage(json, "Test email failed")
         );
       }
-      setTestResult(`Test email sent to ${json.to}.`);
+      setTestResult(`Test email sent to ${String(json.to ?? "the admin user")}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Test email failed");
     } finally {
