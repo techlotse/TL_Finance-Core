@@ -1,11 +1,18 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-alpine AS base
+ARG NODE_VERSION=24.15.0
+FROM node:${NODE_VERSION}-alpine AS base
+ARG NPM_VERSION=11.14.1
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 # OpenSSL supports TLS for the Node/PostgreSQL stack. The PostgreSQL client
 # provides pg_dump for the built-in backup runner.
-RUN apk add --no-cache openssl postgresql-client
+#
+# npm is pinned above the vulnerable base-image copy of picomatch 4.0.3
+# reported as CVE-2026-33671 by Docker Scout.
+RUN npm install -g "npm@${NPM_VERSION}" \
+ && npm cache clean --force \
+ && apk add --no-cache openssl postgresql-client
 
 FROM base AS deps
 COPY package.json package-lock.json ./

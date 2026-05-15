@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the current project review for the v0.7.6 baseline. It
+This document records the current project review for the v0.7.7 baseline. It
 separates public-readiness work from the local document archive.
 
 ## Architecture

@@ -88,6 +88,7 @@ Roadmap:
 - v0.7.3: public-alpha payment, HA, migration, and backup readiness prep.
 - v0.7.5: security audit fixes and production-origin hardening.
 - v0.7.6: automatic GitHub Releases after verified main builds.
+- v0.7.7: Docker base-image CVE mitigation on the Node 24 runtime.
 - v0.8.0: public alpha in HA with a payment provider for the SaaS version.
 - v0.9.0: bug fixes and public beta readiness.
 - v1.0.0: stable public release with the v0.5.0 feature set preserved.

@@ -17,7 +17,15 @@ function has(path, text) {
 }
 
 const pkg = JSON.parse(read("package.json"));
-assert("package is at least v0.7.5", /^0\.(7\.[5-9]|8\.)/.test(pkg.version));
+assert("package is at least v0.7.7", /^0\.(7\.[7-9]|8\.)/.test(pkg.version));
+
+const dockerfile = read("Dockerfile");
+assert("Dockerfile uses Node 24 runtime", dockerfile.includes("NODE_VERSION=24."));
+assert("Dockerfile pins npm with fixed picomatch", dockerfile.includes("NPM_VERSION=11.14.1"));
+assert("Dockerfile upgrades global npm before install/build", dockerfile.includes("npm install -g \"npm@${NPM_VERSION}\""));
+
+const workflow = read(".github/workflows/docker-publish.yml");
+assert("GitHub Actions tests on Node 24", workflow.includes("node-version: 24"));
 
 assert("production entrypoint requires APP_BASE_URL", has("scripts/docker-entrypoint.sh", "APP_BASE_URL must be set"));
 assert("single-node compose requires APP_BASE_URL", has("docker-compose.yml", "${APP_BASE_URL:?"));

@@ -36,6 +36,21 @@ Docker Hub publishing is enabled.
 
 No public changes yet.
 
+## v0.7.7 - 2026-05-15
+
+Mitigated CVE risks.
+
+Changed:
+
+- Moved the Docker build/runtime base to Node 24 Alpine.
+- Pinned the image's global npm to `11.14.1`, which replaces the vulnerable
+  base-image `picomatch@4.0.3` copy reported by Docker Scout as
+  `CVE-2026-33671` with `picomatch@4.0.4`.
+- Updated GitHub Actions verification to run on Node 24 to match the Docker
+  runtime family.
+- Added readiness/security checks that enforce the Node 24 base image and
+  pinned fixed npm version.
+
 ## v0.7.6 - 2026-05-14
 
 Release automation.

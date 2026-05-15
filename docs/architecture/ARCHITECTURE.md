@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the runtime architecture for TL Finance Core v0.7.6.
+This document describes the runtime architecture for TL Finance Core v0.7.7.
 It is the source document for contributors who need to understand how requests,
 data, money calculations, and security boundaries move through the system.
 
@@ -68,10 +68,12 @@ primary emphasis.
 ## Deployment
 
 The Dockerfile builds a production Next.js image with Prisma generated during
-the build. The single-node compose file is suitable for local validation and
-personal self-hosting. The multinode compose file is suitable for local HA
-testing on Docker Desktop. `docker-compose.ha.yml` is the public-alpha role
-file for same-node or split-host HA rehearsal.
+the build. v0.7.7 uses a Node 24 Alpine base and pins global npm to a fixed
+version so Docker Scout does not inherit the vulnerable base-image
+`picomatch@4.0.3` package. The single-node compose file is suitable for local
+validation and personal self-hosting. The multinode compose file is suitable
+for local HA testing on Docker Desktop. `docker-compose.ha.yml` is the
+public-alpha role file for same-node or split-host HA rehearsal.
 
 Run database migrations after the containers are healthy:
 
@@ -105,4 +107,4 @@ When adding features:
   `householdId` filters or missing ownership assertions.
 - If forecast totals drift, check whether amounts crossed a server-to-client
   boundary as JSON numbers instead of strings.
-- Redis is present in the multinode stack but is not the v0.7.6 session store.
+- Redis is present in the multinode stack but is not the v0.7.7 session store.

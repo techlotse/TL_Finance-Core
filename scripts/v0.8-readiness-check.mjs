@@ -28,7 +28,7 @@ function has(path, text) {
 }
 
 const pkg = JSON.parse(read("package.json"));
-assert("package is at least v0.7.6", /^0\.(7\.[6-9]|8\.)/.test(pkg.version));
+assert("package is at least v0.7.7", /^0\.(7\.[7-9]|8\.)/.test(pkg.version));
 assert("CI runs migration additive-safety check", pkg.scripts.ci.includes("test:migrations"));
 assert("CI runs v0.8 readiness check", pkg.scripts.ci.includes("test:readiness:v0.8"));
 assert("CI runs security audit check", pkg.scripts.ci.includes("test:security"));

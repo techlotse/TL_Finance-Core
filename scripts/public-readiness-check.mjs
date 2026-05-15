@@ -26,10 +26,19 @@ function walk(dir) {
 assert("package-lock.json exists", existsSync(join(root, "package-lock.json")));
 
 const dockerfile = read("Dockerfile");
+const forbiddenNpmInstall = dockerfile
+  .split(/\r?\n/)
+  .some(
+    (line) =>
+      /\bRUN\s+npm install(\s|$)/.test(line) &&
+      !line.includes('npm install -g "npm@${NPM_VERSION}"')
+  );
 assert("Dockerfile uses npm ci", dockerfile.includes("RUN npm ci"));
+assert("Dockerfile uses Node 24 base image", dockerfile.includes("NODE_VERSION=24."));
+assert("Dockerfile pins fixed npm version", dockerfile.includes("NPM_VERSION=11.14.1"));
 assert(
   "Dockerfile does not fall back to npm install",
-  !dockerfile.includes("npm install")
+  !forbiddenNpmInstall
 );
 assert(
   "Docker image validates runtime env before start",

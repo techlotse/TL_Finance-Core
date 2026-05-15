@@ -3,7 +3,7 @@
 ## Purpose
 
 This document summarizes the REST API surface used by TL Finance Core client
-components. It is not a public third-party API contract in v0.7.6.
+components. It is not a public third-party API contract in v0.7.7.
 
 ## Architecture
 

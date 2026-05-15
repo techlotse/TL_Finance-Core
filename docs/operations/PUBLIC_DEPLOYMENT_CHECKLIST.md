@@ -11,13 +11,13 @@ Required production shape:
 
 | Layer | Requirement |
 | --- | --- |
-| App | Docker image built from a committed `package-lock.json` with `npm ci` |
+| App | Docker image built from a committed `package-lock.json` with `npm ci` on the Node 24 runtime image |
 | Database | PostgreSQL with a non-default password and persistent volume |
 | TLS | Real certificate at the public reverse proxy |
 | Mail | SMTP configured and tested for reset + verification delivery |
 | Payments | Hosted payment links configured for public-alpha tiers or explicitly disabled |
 | Backups | `pg_dump` backup path writable, manual run tested, restore tested |
-| CI | Node 24-compatible GitHub Actions, typecheck, lint, unit tests, readiness checks, migration safety, release readiness, production dependency audit, migration deploy, auth/access integration tests, build |
+| CI | Node 24 GitHub Actions, typecheck, lint, unit tests, readiness checks, migration safety, release readiness, production dependency audit, migration deploy, auth/access integration tests, build |
 | Secrets | `APP_SECRET`, DB, replication, Redis, and PgAdmin passwords replaced |
 | Origin | `APP_BASE_URL` set to the public HTTPS origin |
 
@@ -76,6 +76,7 @@ Public alpha acceptance:
 | Operations | Backups write `.sql.gz` files and restore successfully; migrations pass additive-safety checks |
 | HA | Single-node compose still runs; HA compose runs same-node or split-host LB/app/DB roles |
 | Release | Docker image build runs after CI verification; GitHub Release is created automatically for a new `package.json` version on `main`; Docker Hub publish runs only when credentials are configured |
+| CVE scan | Docker Scout no longer reports the base-image npm `picomatch@4.0.3` finding |
 
 ## Troubleshooting
 
