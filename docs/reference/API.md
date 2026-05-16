@@ -27,7 +27,7 @@ Endpoint groups:
 | Investments | `/api/investment-projections`, `/api/investment-projections/[id]`, `/result` |
 | Advice | `POST /api/advice/ai` |
 | Billing | `POST /api/billing/checkout` |
-| Admin | `/api/admin/config/*`, `POST /api/admin/config/mail/test`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
+| Admin | `/api/admin/config/*`, `GET /api/admin/users`, `PATCH /api/admin/users/[id]/access`, `POST /api/admin/config/mail/test`, `/api/admin/audit-log`, `/api/admin/audit-log/prune`, `POST /api/admin/backups/run` |
 | FX | `GET /api/exchange-rates/latest?from=CHF&to=EUR` |
 
 ## Configuration
@@ -90,6 +90,16 @@ Payment routes:
 - `POST /api/billing/checkout` accepts `{ tier: "core" | "smart" | "ai" }`,
   requires a signed-in user, appends hosted-checkout reconciliation parameters,
   writes an audit event, and returns `{ ok, url }`.
+
+User access administration routes:
+
+- `GET /api/admin/users` lists up to 200 users with role, product tier, active
+  state, verification state, membership count, and session count.
+- `PATCH /api/admin/users/[id]/access` accepts
+  `{ productTier?: "core" | "smart" | "ai", active?: boolean }`, lets admins
+  grant paid-plan access manually, and audits the before/after access state.
+  It does not mutate roles and refuses to leave the instance without an active
+  admin account.
 
 Authentication hardening:
 

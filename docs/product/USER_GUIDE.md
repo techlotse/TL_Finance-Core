@@ -14,7 +14,7 @@ the signed-in user's memberships:
 Onboarding -> Dashboard
 Dashboard -> Accounts, Budget, Transfers, Assets, Debt, Forecast, Investments
 Settings -> Household, earners, categories, preferences, billing, backup/import-export
-Admin -> Auth, mail, AI, payments, backups, observability, audit log
+Admin -> Auth, users, mail, AI, payments, backups, observability, audit log
 ```
 
 ## Configuration
@@ -59,11 +59,12 @@ Core workflows:
 Admin workflows:
 
 1. Configure registration, session policy, and auth rate limits.
-2. Configure SMTP values, send the built-in test email, then test password
+2. Grant manual plan access or suspend/reactivate accounts under Users.
+3. Configure SMTP values, send the built-in test email, then test password
    reset and verification delivery.
-3. Enable backups, run a manual backup, and test restore before public use.
-4. Configure hosted payment links under Payments for public-alpha billing.
-5. Review audit events and prune old entries according to retention policy.
+4. Enable backups, run a manual backup, and test restore before public use.
+5. Configure hosted payment links under Payments for public-alpha billing.
+6. Review audit events and prune old entries according to retention policy.
 
 ## Troubleshooting
 

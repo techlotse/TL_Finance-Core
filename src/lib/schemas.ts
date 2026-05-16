@@ -350,6 +350,15 @@ export const billingCheckoutSchema = z.object({
   tier: productTierEnum
 });
 
+export const adminUserAccessPatchSchema = z
+  .object({
+    productTier: productTierEnum.optional(),
+    active: z.boolean().optional()
+  })
+  .refine((body) => body.productTier !== undefined || body.active !== undefined, {
+    message: "At least one access field is required"
+  });
+
 export const adminObservabilityConfigPatchSchema = z.object({
   logLevel: z.enum(["debug", "info", "warn", "error"]).optional(),
   sentryDsn: z.string().trim().optional().nullable(),

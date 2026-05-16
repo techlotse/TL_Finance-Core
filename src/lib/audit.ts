@@ -23,6 +23,7 @@ export type AuditAction =
   | "billing_checkout_start"
   | "backup_run"
   | "admin_mail_test"
+  | "admin_user_access_update"
   | "admin_config_update";
 
 export interface AuditEntry {

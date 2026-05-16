@@ -41,9 +41,13 @@ assert("Main release builds include package semver Docker tags", releaseWorkflow
 
 assert("SaaS admin page remains under /admin", existsSync(join(root, "src", "app", "admin", "layout.tsx")));
 assert("SaaS admin API remains under /api/admin", existsSync(join(root, "src", "app", "api", "admin")));
+assert("Admin navigation exposes user access", has("src/app/admin/admin-subnav.tsx", "/admin/users"));
 assert("Admin navigation exposes payments", has("src/app/admin/admin-subnav.tsx", "/admin/payments"));
 assert("No second SaaS admin app route is present", !existsSync(join(root, "src", "app", "saas-admin")));
 
+assert("Admin user access page exists", existsSync(join(root, "src", "app", "admin", "users", "page.tsx")));
+assert("Admin user access API exists", existsSync(join(root, "src", "app", "api", "admin", "users", "[id]", "access", "route.ts")));
+assert("Admin user access manages product tiers", has("src/app/api/admin/users/[id]/access/route.ts", "productTier"));
 assert("Payment admin route exists", existsSync(join(root, "src", "app", "api", "admin", "config", "payments", "route.ts")));
 assert("User checkout route exists", existsSync(join(root, "src", "app", "api", "billing", "checkout", "route.ts")));
 assert("Settings exposes billing tab", has("src/app/settings/settings-tabs.tsx", "billing"));

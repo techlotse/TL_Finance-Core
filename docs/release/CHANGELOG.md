@@ -34,7 +34,11 @@ Docker Hub publishing is enabled.
 
 ## Unreleased
 
-No public changes yet.
+Changed:
+
+- Added admin user-access management under `/admin/users` so an admin can
+  manually grant Core, Smart, or AI access and suspend/reactivate accounts
+  without changing user roles.
 
 ## v0.7.7 - 2026-05-15
 

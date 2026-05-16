@@ -47,6 +47,9 @@ for (const path of [
 assert("mailer omits body from production fallback logs", has("src/lib/mailer.ts", "NODE_ENV === \"production\" ? {} : { body"));
 assert("billing enforces Stripe Payment Link domains", has("src/lib/billing.ts", "isAllowedStripePaymentLinkUrl"));
 assert("billing enforces Stripe portal domains", has("src/lib/billing.ts", "isAllowedStripeBillingPortalUrl"));
+assert("admin user access route is admin-gated", has("src/app/api/admin/users/[id]/access/route.ts", "requireAdminApi"));
+assert("admin user access updates are audited", has("src/lib/audit.ts", "\"admin_user_access_update\""));
+assert("admin user access preserves active admin account", has("src/app/api/admin/users/[id]/access/route.ts", "At least one active admin account is required"));
 assert("destructive import requires server confirmation", has("src/app/api/household/import/route.ts", "confirmReplace"));
 assert("backup runs have distinct audit action", has("src/lib/audit.ts", "\"backup_run\""));
 assert("signup uses serializable first-admin transaction", has("src/app/api/auth/signup/route.ts", "TransactionIsolationLevel.Serializable"));

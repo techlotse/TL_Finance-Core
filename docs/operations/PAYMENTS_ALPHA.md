@@ -11,6 +11,7 @@ does not yet grant entitlements automatically from payment webhooks.
 ```text
 User Settings -> /api/billing/checkout -> hosted payment link
 Admin /admin/payments -> AdminConfig.paymentConfig
+Admin /admin/users -> User.productTier manual entitlement
 ```
 
 The alpha target is Stripe Payment Links because Stripe documents hosted
@@ -32,6 +33,8 @@ Primary references:
 4. Enable payment workflow.
 5. Paste HTTPS checkout URLs for `smart` and/or `ai`.
 6. Optionally paste a hosted billing portal URL and billing support email.
+7. After payment is confirmed externally, open `/admin/users` and set the
+   user's product tier to `smart` or `ai`.
 
 The `core` tier can remain enabled without a checkout URL. It is the free
 self-hosted/default tier.
@@ -52,7 +55,8 @@ self-hosted/default tier.
 - No card data touches TL Finance Core.
 - No payment provider secret is stored for this workflow.
 - No webhook endpoint is implemented in v0.7.7.
-- Product-tier changes after successful payment remain an admin/manual step.
+- Product-tier changes after successful payment are applied manually in
+  `/admin/users`.
 
 ## v0.8.0 Readiness Requirements
 

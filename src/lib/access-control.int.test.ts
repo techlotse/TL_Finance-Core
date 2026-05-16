@@ -36,6 +36,7 @@ import {
 } from "@/app/api/investment-projections/[id]/route";
 import { POST as switchHousehold } from "@/app/api/household/switch/route";
 import { PATCH as patchAdminAuth } from "@/app/api/admin/config/auth/route";
+import { PATCH as patchAdminUserAccess } from "@/app/api/admin/users/[id]/access/route";
 import { POST as requestPasswordReset } from "@/app/api/auth/reset-password/request/route";
 import { POST as completePasswordReset } from "@/app/api/auth/reset-password/complete/route";
 import { POST as requestEmailVerification } from "@/app/api/auth/verify-email/request/route";
@@ -336,6 +337,8 @@ async function seedAccessScenario() {
   const bobSession = await createSession(bob.id);
 
   return {
+    alice,
+    bob,
     alicePrimary,
     aliceSecond,
     bobHousehold,
@@ -598,6 +601,58 @@ describe("v0.7 auth and access controls", () => {
     );
 
     expect(res.status).toBe(403);
+  });
+
+  it("rejects admin user access updates from non-admin users", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const res = await callIdRoute(
+      patchAdminUserAccess,
+      "PATCH",
+      fixture.bob.id,
+      { productTier: "ai" }
+    );
+
+    expect(res.status).toBe(403);
+  });
+
+  it("lets admins grant product tiers without changing user roles", async () => {
+    const fixture = await seedAccessScenario();
+    await prisma.user.update({
+      where: { id: fixture.alice.id },
+      data: { role: "admin" }
+    });
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const res = await callIdRoute(
+      patchAdminUserAccess,
+      "PATCH",
+      fixture.bob.id,
+      { productTier: "ai", active: true }
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.user.productTier).toBe("ai");
+    expect(body.user.role).toBe("user");
+
+    const bob = await prisma.user.findUniqueOrThrow({
+      where: { id: fixture.bob.id },
+      select: { productTier: true, role: true }
+    });
+    expect(bob.productTier).toBe("ai");
+    expect(bob.role).toBe("user");
+
+    await expect(
+      prisma.auditLog.findFirstOrThrow({
+        where: {
+          action: "admin_user_access_update",
+          userId: fixture.alice.id,
+          resourceId: fixture.bob.id
+        }
+      })
+    ).resolves.toBeTruthy();
   });
 
   it("rate-limits password reset requests by IP", async () => {

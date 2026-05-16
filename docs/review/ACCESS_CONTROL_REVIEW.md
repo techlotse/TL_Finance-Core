@@ -104,8 +104,9 @@ and writes only with that scope. Every `[id]` mutation runs
 #### Admin role-gated
 
 `requireAdminApi` returns 401 if no session, 403 if the session's user has
-role !== "admin". Role is set on the User row at signup (first user only)
-and mutated by future admin-management UI.
+role !== "admin". Role is set on the User row at signup (first user only).
+The admin user-access UI can grant product tiers and suspend/reactivate users,
+but it does not mutate roles.
 
 | Route | Method | Notes |
 | --- | --- | --- |
@@ -114,6 +115,8 @@ and mutated by future admin-management UI.
 | `/api/admin/config/mail` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/mail/test` | POST | Sends a test email; audited |
 | `/api/admin/config/payments` | PATCH | Audited; hosted checkout URLs only |
+| `/api/admin/users` | GET | Lists user access state for admins |
+| `/api/admin/users/[id]/access` | PATCH | Audited; product tier and active state only |
 | `/api/admin/config/backup` | PATCH | Audited; cipher field never echoed |
 | `/api/admin/config/observability` | PATCH | Audited |
 | `/api/admin/audit-log` | GET | Read-only listing |
@@ -163,13 +166,15 @@ real migrated PostgreSQL database and covers:
 - Rejected attempts to attach owned rows to another household's category group,
   category, account, income earner, transfer account, or projection account.
 - Rejected admin configuration writes from non-admin users.
+- Rejected admin user-access writes from non-admin users.
+- Successful admin product-tier grants that do not mutate user roles.
 - Password reset and verification resend rate limits.
 - Single-use password reset tokens with session revocation.
 - Single-use email verification tokens.
 
 Additional static readiness checks run through `npm run test:readiness:v0.8`
-and cover payment route presence, `/admin` isolation, HA deployment assets,
-migration safety, and backup import compatibility.
+and cover admin user access, payment route presence, `/admin` isolation, HA
+deployment assets, migration safety, and backup import compatibility.
 `npm run test:security` covers trusted auth-link origins, CSRF middleware,
 payment URL allowlists, destructive-import confirmation, and production token
 log suppression.
