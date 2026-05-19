@@ -25,6 +25,8 @@ export default async function AccountsPage() {
     annualInterestRate: a.annualInterestRate?.toString() ?? null,
     expectedAnnualReturn: a.expectedAnnualReturn?.toString() ?? null,
     monthlyManagementCost: a.monthlyManagementCost?.toString() ?? null,
+    retirement: a.retirement,
+    kidsSavings: a.kidsSavings,
     minimumMonthlyPayment: a.minimumMonthlyPayment?.toString() ?? null,
     // Include the pocket id so the snapshot dialog can post against it.
     currencies: a.currencies.map((c) => ({

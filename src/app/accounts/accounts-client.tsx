@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/select";
 import { FormField } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { MoneyAmount } from "@/components/money-amount";
 import {
   effectiveMonthlyCostCurrency,
@@ -31,6 +32,8 @@ export interface AccountRow {
   annualInterestRate: string | null;
   expectedAnnualReturn: string | null;
   monthlyManagementCost: string | null;
+  retirement: boolean;
+  kidsSavings: boolean;
   minimumMonthlyPayment: string | null;
   currencies: {
     id?: string;
@@ -88,6 +91,8 @@ export function AccountsClient({
                     <CardDescription>
                       {a.institution ?? "—"} ·{" "}
                       <span className="capitalize">{a.accountType}</span>
+                      {a.retirement && " · Retirement"}
+                      {a.kidsSavings && " · Kids saving"}
                     </CardDescription>
                   </div>
                 </div>
@@ -264,6 +269,8 @@ function AccountFormDialog({
     annualInterestRate: existing?.annualInterestRate ?? "",
     expectedAnnualReturn: existing?.expectedAnnualReturn ?? "",
     monthlyManagementCost: existing?.monthlyManagementCost ?? "",
+    retirement: existing?.retirement ?? false,
+    kidsSavings: existing?.kidsSavings ?? false,
     minimumMonthlyPayment: existing?.minimumMonthlyPayment ?? "",
     currencies: existing?.currencies.length
       ? existing.currencies.map((c) => ({
@@ -330,6 +337,8 @@ function AccountFormDialog({
         accountType: form.accountType,
         notes: form.notes || null,
         active: form.active,
+        retirement: form.kidsSavings ? false : form.retirement,
+        kidsSavings: form.accountType === "savings" ? form.kidsSavings : false,
         monthlyCost: form.monthlyCost ? form.monthlyCost : null,
         monthlyCostCurrency: form.monthlyCost
           ? accountCostCurrencyForSubmit()
@@ -343,11 +352,13 @@ function AccountFormDialog({
             ? form.annualInterestRate
             : null,
         expectedAnnualReturn:
-          form.accountType === "investment" && form.expectedAnnualReturn
+          (form.accountType === "investment" || form.retirement) &&
+          form.expectedAnnualReturn
             ? form.expectedAnnualReturn
             : null,
         monthlyManagementCost:
-          form.accountType === "investment" && form.monthlyManagementCost
+          (form.accountType === "investment" || form.retirement) &&
+          form.monthlyManagementCost
             ? form.monthlyManagementCost
             : null,
         minimumMonthlyPayment:
@@ -385,6 +396,8 @@ function AccountFormDialog({
         annualInterestRate: saved.annualInterestRate?.toString() ?? null,
         expectedAnnualReturn: saved.expectedAnnualReturn?.toString() ?? null,
         monthlyManagementCost: saved.monthlyManagementCost?.toString() ?? null,
+        retirement: saved.retirement,
+        kidsSavings: saved.kidsSavings,
         minimumMonthlyPayment: saved.minimumMonthlyPayment?.toString() ?? null,
         currencies: saved.currencies.map(
           (c: { currency: string; openingBalance: string; currentBalance: string }) => ({
@@ -428,12 +441,15 @@ function AccountFormDialog({
           <FormField label="Type">
             <Select
               value={form.accountType}
-              onChange={(e) =>
+              onChange={(e) => {
+                const accountType = e.target.value as AccountType;
                 setForm({
                   ...form,
-                  accountType: e.target.value as AccountType
-                })
-              }
+                  accountType,
+                  kidsSavings:
+                    accountType === "savings" ? form.kidsSavings : false
+                });
+              }}
             >
               <option value="current">Current</option>
               <option value="savings">Savings</option>
@@ -444,6 +460,51 @@ function AccountFormDialog({
             </Select>
           </FormField>
         </div>
+
+        {(form.accountType === "savings" || form.accountType === "investment") && (
+          <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-muted/30 p-3 sm:grid-cols-2">
+            <label className="flex items-start justify-between gap-3">
+              <span>
+                <span className="block text-sm font-medium">Retirement / Pillar 3a</span>
+                <span className="block text-xs text-muted-foreground">
+                  Use long-term investment assumptions and retirement advice.
+                </span>
+              </span>
+              <Switch
+                checked={form.retirement}
+                onCheckedChange={(retirement) =>
+                  setForm({
+                    ...form,
+                    retirement,
+                    kidsSavings: retirement ? false : form.kidsSavings
+                  })
+                }
+                ariaLabel="Mark account as retirement"
+              />
+            </label>
+            {form.accountType === "savings" && (
+              <label className="flex items-start justify-between gap-3">
+                <span>
+                  <span className="block text-sm font-medium">Kids saving</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Exclude from household wealth projections.
+                  </span>
+                </span>
+                <Switch
+                  checked={form.kidsSavings}
+                  onCheckedChange={(kidsSavings) =>
+                    setForm({
+                      ...form,
+                      kidsSavings,
+                      retirement: kidsSavings ? false : form.retirement
+                    })
+                  }
+                  ariaLabel="Mark account as kids saving"
+                />
+              </label>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           <FormField label="Monthly cost" hint="Charged monthly">
@@ -507,7 +568,7 @@ function AccountFormDialog({
           )}
         </div>
 
-        {form.accountType === "investment" && (
+        {(form.accountType === "investment" || form.retirement) && (
           <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-muted/30 p-3">
             <FormField
               label="Expected annual return"

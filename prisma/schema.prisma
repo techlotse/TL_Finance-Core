@@ -261,6 +261,12 @@ model BankAccount {
   // same way it does for synthetic InvestmentProjection scenarios.
   expectedAnnualReturn   Decimal? @db.Decimal(8, 6)
   monthlyManagementCost  Decimal? @db.Decimal(18, 4)
+  // Planning flags. Retirement covers Pillar 3a / pension-style accounts
+  // that should be modelled with long-term investment assumptions. Kids
+  // savings is earmarked for a child and excluded from household wealth
+  // projections and emergency-fund buffers.
+  retirement          Boolean     @default(false)
+  kidsSavings         Boolean     @default(false)
   // Credit-account specifics. Used by the Debt page to compute payoff time
   // and total interest if you keep paying the minimum.
   minimumMonthlyPayment  Decimal? @db.Decimal(18, 4)

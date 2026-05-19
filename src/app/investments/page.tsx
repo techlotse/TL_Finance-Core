@@ -21,11 +21,11 @@ export default async function InvestmentsPage() {
     prisma.bankAccount.findMany({
       where: { householdId: household.id, active: true, deletedAt: null }
     }),
-    // Investment-type accounts surfaced as their own cards.
+    // Investment-type and flagged retirement accounts surfaced as their own cards.
     prisma.bankAccount.findMany({
       where: {
         householdId: household.id,
-        accountType: "investment",
+        OR: [{ accountType: "investment" }, { retirement: true }],
         deletedAt: null
       },
       include: { currencies: true },
@@ -51,6 +51,7 @@ export default async function InvestmentsPage() {
     id: a.id,
     name: a.name,
     institution: a.institution,
+    retirement: a.retirement,
     expectedAnnualReturn: a.expectedAnnualReturn?.toString() ?? null,
     monthlyManagementCost: a.monthlyManagementCost?.toString() ?? null,
     currencies: a.currencies.map((c) => ({

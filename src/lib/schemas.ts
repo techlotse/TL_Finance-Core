@@ -113,6 +113,8 @@ export const accountCreateSchema = z.object({
   annualInterestRate: decimalRate.optional().nullable(),
   expectedAnnualReturn: decimalRate.optional().nullable(),
   monthlyManagementCost: moneyAmount.optional().nullable(),
+  retirement: z.boolean().optional(),
+  kidsSavings: z.boolean().optional(),
   minimumMonthlyPayment: moneyAmount.optional().nullable(),
   currencies: z.array(accountCurrencyInputSchema).min(1)
 });
@@ -138,6 +140,8 @@ export const accountPatchSchema = z.object({
   annualInterestRate: decimalRate.optional().nullable(),
   expectedAnnualReturn: decimalRate.optional().nullable(),
   monthlyManagementCost: moneyAmount.optional().nullable(),
+  retirement: z.boolean().optional(),
+  kidsSavings: z.boolean().optional(),
   minimumMonthlyPayment: moneyAmount.optional().nullable(),
   currencies: z.array(accountCurrencyInputSchema).optional()
 });

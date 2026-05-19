@@ -82,5 +82,10 @@ payloads reference rows by stable names instead of database IDs.
   budget line item. Its currency is `monthlyCostCurrency`; if older data lacks
   that field, the app uses the account's first currency pocket before falling
   back to the household base currency.
+- `BankAccount.retirement` marks Pillar 3a / pension-style accounts for
+  long-term investment projections and retirement-aware advice.
+- `BankAccount.kidsSavings` marks child-earmarked savings. The account remains
+  visible, but household wealth forecasts and emergency-fund buffers exclude
+  the balance.
 - `InvestmentProjection` can be standalone or attached to a real investment
   account.

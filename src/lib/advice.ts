@@ -87,6 +87,8 @@ export interface FinancialSnapshot {
     currentAndCash: string;
     savings: string;
     investments: string;
+    nonRetirementInvestments: string;
+    retirementInvestments: string;
     tangibleAssets: string;
     totalTracked: string;
     creditDebt: string;
@@ -96,6 +98,7 @@ export interface FinancialSnapshot {
     targetAmount: string;
     currentMonths: string;
     surplusOrGap: string;
+    recommendedPriority: AdvicePriority;
   };
   jobLoss: {
     largestEarnerMonthlyIncome: string;
@@ -122,6 +125,8 @@ export interface FinancialSnapshot {
     monthlyCost: string | null;
     monthlyCostCurrency: string | null;
     monthlyCostBase: string | null;
+    retirement: boolean;
+    kidsSavings: boolean;
   }>;
   lowYieldSavings: Array<{
     id: string;
@@ -302,8 +307,8 @@ export async function buildFinancialSnapshotFromData({
   let monthlyInvestmentTransfers = new Decimal(0);
   for (const transfer of transfers) {
     if (!transfer.active) continue;
-    if (transfer.targetAccount.accountType !== "investment") continue;
-    if (transfer.sourceAccount.accountType === "investment") continue;
+    if (!isInvestmentPlanningAccount(transfer.targetAccount)) continue;
+    if (isInvestmentPlanningAccount(transfer.sourceAccount)) continue;
     const monthly = toDecimal(transfer.amount).mul(
       monthlyMultiplier(transfer.recurrence)
     );
@@ -319,6 +324,8 @@ export async function buildFinancialSnapshotFromData({
   let currentAndCash = new Decimal(0);
   let savings = new Decimal(0);
   let investments = new Decimal(0);
+  let nonRetirementInvestments = new Decimal(0);
+  let retirementInvestments = new Decimal(0);
   let creditDebt = new Decimal(0);
 
   for (const account of accounts) {
@@ -341,17 +348,29 @@ export async function buildFinancialSnapshotFromData({
       expectedAnnualReturn: account.expectedAnnualReturn?.toString() ?? null,
       monthlyCost: account.monthlyCost?.toString() ?? null,
       monthlyCostCurrency,
-      monthlyCostBase
+      monthlyCostBase,
+      retirement: account.retirement,
+      kidsSavings: account.kidsSavings
     });
 
-    if (["current", "cash"].includes(account.accountType)) {
+    if (account.kidsSavings) {
+      continue;
+    }
+
+    if (isInvestmentPlanningAccount(account)) {
+      investments = investments.plus(balanceBase);
+      if (account.retirement) {
+        retirementInvestments = retirementInvestments.plus(balanceBase);
+      } else {
+        nonRetirementInvestments =
+          nonRetirementInvestments.plus(balanceBase);
+      }
+    } else if (["current", "cash"].includes(account.accountType)) {
       currentAndCash = currentAndCash.plus(balanceBase);
       liquid = liquid.plus(balanceBase);
     } else if (account.accountType === "savings") {
       savings = savings.plus(balanceBase);
       liquid = liquid.plus(balanceBase);
-    } else if (account.accountType === "investment") {
-      investments = investments.plus(balanceBase);
     } else if (account.accountType === "credit") {
       creditDebt = creditDebt.plus(balanceBase.abs());
     }
@@ -372,10 +391,17 @@ export async function buildFinancialSnapshotFromData({
     Array.from(incomeByEarner.values()).filter((amount) => amount.gt(0)).length,
     summary.monthlyIncome.gt(0) ? 1 : 0
   );
+  const incomeSources = Array.from(incomeByEarner.values()).filter((amount) =>
+    amount.gt(0)
+  );
+  if (unassignedIncome.gt(0)) incomeSources.push(unassignedIncome);
+  const lowestEarnerIncome =
+    incomeSources.length > 0
+      ? Decimal.min(...incomeSources)
+      : new Decimal(0);
   const targetMonths = emergencyTargetMonths({
-    earnerCount: activeEarnerCount,
-    monthlyNet: summary.net,
-    hasKidsPlanning: hasKidsSignal(items)
+    essentialExpenses,
+    lowestEarnerIncome
   });
   const emergencyTargetAmount = essentialExpenses.mul(targetMonths);
   const currentEmergencyMonths = essentialExpenses.gt(0)
@@ -401,6 +427,13 @@ export async function buildFinancialSnapshotFromData({
   const allEarnerMonthsCovered = essentialExpenses.gt(0)
     ? liquid.div(essentialExpenses)
     : new Decimal(999);
+  const strongSecondaryBuffers =
+    summary.monthlyIncome.gt(0) &&
+    savings.gt(summary.monthlyIncome) &&
+    nonRetirementInvestments.gt(summary.monthlyIncome.mul(12));
+  const recommendedEmergencyPriority: AdvicePriority = strongSecondaryBuffers
+    ? "medium"
+    : "high";
 
   const savingsCapacity = plannedMonthlyInvestments.plus(
     Decimal.max(summary.net.minus(monthlyInvestmentTransfers), new Decimal(0))
@@ -422,6 +455,7 @@ export async function buildFinancialSnapshotFromData({
   const lowYieldSavings = accountRows
     .filter((account) => {
       if (account.accountType !== "savings") return false;
+      if (account.retirement || account.kidsSavings) return false;
       const rateValue = toDecimal(account.annualInterestRate ?? "0");
       return rateValue.lt("0.01") && toDecimal(account.balanceBase).gt(0);
     })
@@ -467,6 +501,8 @@ export async function buildFinancialSnapshotFromData({
       currentAndCash: currentAndCash.toString(),
       savings: savings.toString(),
       investments: investments.toString(),
+      nonRetirementInvestments: nonRetirementInvestments.toString(),
+      retirementInvestments: retirementInvestments.toString(),
       tangibleAssets: assetTotal.toString(),
       totalTracked: liquid.plus(investments).plus(assetTotal).toString(),
       creditDebt: creditDebt.toString()
@@ -475,7 +511,8 @@ export async function buildFinancialSnapshotFromData({
       targetMonths,
       targetAmount: emergencyTargetAmount.toString(),
       currentMonths: currentEmergencyMonths.toString(),
-      surplusOrGap: liquid.minus(emergencyTargetAmount).toString()
+      surplusOrGap: liquid.minus(emergencyTargetAmount).toString(),
+      recommendedPriority: recommendedEmergencyPriority
     },
     jobLoss: {
       largestEarnerMonthlyIncome: largestEarnerIncome.toString(),
@@ -495,9 +532,12 @@ export async function buildFinancialSnapshotFromData({
     accounts: accountRows,
     lowYieldSavings,
     signals: {
-      hasKidsPlanning: hasKidsSignal(items),
+      hasKidsPlanning:
+        hasKidsSignal(items) || accounts.some((account) => account.kidsSavings),
       hasRetirementPlanning:
-        hasRetirementSignal(items) || investmentProjections.length > 0,
+        hasRetirementSignal(items) ||
+        investmentProjections.length > 0 ||
+        accounts.some((account) => account.retirement),
       hasInvestmentAccounts:
         investments.gt(0) || plannedMonthlyInvestments.gt(0),
       hasHighInterestDebt: accountRows.some(
@@ -567,7 +607,7 @@ export function buildClassicAdvice(
   if (emergencyGap.lt(0)) {
     recommendations.push({
       id: "build-emergency-fund",
-      priority: "high",
+      priority: snapshot.emergencyFund.recommendedPriority,
       category: "emergency_fund",
       title: `Build a ${snapshot.emergencyFund.targetMonths}-month emergency fund`,
       rationale: `Liquid reserves cover about ${emergencyMonths.toDecimalPlaces(
@@ -761,7 +801,7 @@ export function buildClassicAdvice(
       .slice(0, 8),
     assumptions: [
       "Emergency-fund targets use essential expenses, not total lifestyle spending.",
-      "Single-earner households target 6 months of essentials; multi-earner households target 4 months.",
+      "Emergency-fund targets use 3 months when essentials fit within the lowest earner's monthly income, otherwise 5 months.",
       "FIRE math uses 25x annual living expenses and a simple 5% real return assumption.",
       "This is planning guidance, not regulated financial advice."
     ]
@@ -778,6 +818,8 @@ export function snapshotForAi(snapshot: FinancialSnapshot) {
       balanceBase: account.balanceBase,
       annualInterestRate: account.annualInterestRate,
       expectedAnnualReturn: account.expectedAnnualReturn,
+      retirement: account.retirement,
+      kidsSavings: account.kidsSavings,
       monthlyCost: account.monthlyCost
         ? {
             amount: account.monthlyCost,
@@ -812,6 +854,12 @@ async function accountBalanceBase(
       baseCurrency
     )
   ).total;
+}
+
+function isInvestmentPlanningAccount(
+  account: Pick<BankAccount, "accountType" | "retirement">
+): boolean {
+  return account.accountType === "investment" || account.retirement;
 }
 
 function isEssentialExpense(item: BudgetItemWithRelations): boolean {
@@ -900,18 +948,13 @@ function searchableText(item: BudgetItemWithRelations): string {
 }
 
 function emergencyTargetMonths({
-  earnerCount,
-  monthlyNet,
-  hasKidsPlanning
+  essentialExpenses,
+  lowestEarnerIncome
 }: {
-  earnerCount: number;
-  monthlyNet: Decimal;
-  hasKidsPlanning: boolean;
+  essentialExpenses: Decimal;
+  lowestEarnerIncome: Decimal;
 }): number {
-  let months = earnerCount <= 1 ? 6 : 4;
-  if (monthlyNet.lt(0)) months += 2;
-  if (hasKidsPlanning) months += 1;
-  return Math.min(12, months);
+  return essentialExpenses.gt(lowestEarnerIncome) ? 5 : 3;
 }
 
 function estimateYearsToTarget({

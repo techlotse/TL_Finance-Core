@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
           "CHF"
         )
       : null;
+    const kidsSavings =
+      body.accountType === "savings" && body.kidsSavings === true;
+    const retirement = kidsSavings ? false : body.retirement === true;
     const created = await prisma.bankAccount.create({
       data: {
         householdId,
@@ -40,6 +43,8 @@ export async function POST(req: NextRequest) {
         accountType: body.accountType,
         notes: body.notes ?? null,
         active: body.active ?? true,
+        retirement,
+        kidsSavings,
         monthlyCost: body.monthlyCost ?? null,
         monthlyCostCurrency,
         annualInterestRate: body.annualInterestRate ?? null,

@@ -37,6 +37,7 @@ export interface InvestmentAccountRow {
   id: string;
   name: string;
   institution: string | null;
+  retirement: boolean;
   expectedAnnualReturn: string | null;
   monthlyManagementCost: string | null;
   currencies: { currency: string; currentBalance: string }[];
@@ -47,6 +48,7 @@ export interface ResultPayload {
   name: string;
   currency: string;
   summary: {
+    recurringContribution?: string;
     totalContributions: string;
     finalNominal: string;
     finalReal: string;
@@ -313,7 +315,8 @@ function InvestmentAccountCard({
         <div>
           <CardTitle>{account.name}</CardTitle>
           <CardDescription>
-            {account.institution ?? "—"} · expected return{" "}
+            {account.institution ?? "—"}
+            {account.retirement ? " · retirement" : ""} · expected return{" "}
             {account.expectedAnnualReturn
               ? formatPercent(account.expectedAnnualReturn)
               : "—"}{" "}
@@ -348,6 +351,16 @@ function InvestmentAccountCard({
           </Stat>
           {data && (
             <>
+              {data.summary.recurringContribution &&
+                Number(data.summary.recurringContribution) > 0 && (
+                  <Stat label="Planned monthly">
+                    {formatMoney(
+                      data.summary.recurringContribution,
+                      data.currency
+                    )}{" "}
+                    {data.currency}
+                  </Stat>
+                )}
               <Stat label="Final nominal">
                 {formatMoney(data.summary.finalNominal, data.currency)}{" "}
                 {data.currency}

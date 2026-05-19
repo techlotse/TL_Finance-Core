@@ -23,6 +23,7 @@ Release plan:
 | v0.7.5 | Security audit fixes, trusted public origin, CSRF guard, and destructive-import confirmation |
 | v0.7.6 | Automatic GitHub Release creation after verified main builds |
 | v0.7.7 | Docker base-image CVE mitigation and Node 24 verification |
+| v0.7.8 | Planning bugfixes for retirement accounts, kids savings, investment transfers, and emergency-fund rules |
 | v0.8.0 | Public alpha, HA deployment, payment provider for SaaS version |
 | v0.9.0 | Bug fixes and public beta readiness |
 | v1.0.0 | Stable public release with the v0.5.0 feature set preserved |
@@ -45,6 +46,7 @@ Planning gates:
 | v0.7.5 | Security audit check passes and production auth links use only the configured public origin |
 | v0.7.6 | Successful `main` builds create an idempotent GitHub Release for the current package version |
 | v0.7.7 | Docker Scout no longer reports vulnerable base-image `picomatch@4.0.3` from global npm |
+| v0.7.8 | Smart/AI advice and forecasts treat retirement, kids savings, scheduled investment transfers, and emergency-fund priority consistently |
 | v0.8.0 | Public alpha can accept payments and survive single app-node failure |
 | v0.9.0 | Known alpha defects are fixed and beta onboarding is documented |
 | v1.0.0 | Docs, deploy path, backup/restore, and access model are stable |

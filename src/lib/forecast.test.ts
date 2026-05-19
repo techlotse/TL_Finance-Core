@@ -21,6 +21,8 @@ function account(
     annualInterestRate: null,
     expectedAnnualReturn: null,
     monthlyManagementCost: null,
+    retirement: false,
+    kidsSavings: false,
     minimumMonthlyPayment: null,
     notes: null,
     active: true,
@@ -100,5 +102,22 @@ describe("scheduled transfer forecasts", () => {
       currency: "CHF"
     });
     expect(transferDay?.events[0]?.amount.toString()).toBe("100");
+  });
+
+  it("keeps kids savings in account details but out of household wealth totals", async () => {
+    const household = account("household", "1000");
+    const kids = { ...account("kids", "5000"), accountType: "savings" as const, kidsSavings: true };
+    const [point] = await forecastBalances({
+      baseCurrency: "CHF",
+      accounts: [household, kids],
+      budgetItems: [],
+      transfers: [],
+      horizonYears: 1,
+      startDate: new Date("2026-05-19T00:00:00.000Z")
+    });
+
+    expect(point.accountBalances.kids.toString()).toBe("5000");
+    expect(point.totalBaseCurrency.toString()).toBe("1000");
+    expect(point.netWorthBaseCurrency.toString()).toBe("1000");
   });
 });

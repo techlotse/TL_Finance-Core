@@ -3,7 +3,7 @@
 ## Purpose
 
 This guide explains how an instance user sets up and operates TL Finance Core
-v0.7.7.
+v0.7.8.
 
 ## Architecture
 
@@ -60,12 +60,22 @@ Savings and investment planning:
 
 - Use a scheduled transfer when money should move between two real accounts,
   for example current account -> Pillar 3a or investment account. Transfers
-  into accounts with type `Investment` count as planned investing in advice.
+  into accounts with type `Investment` or the Retirement / Pillar 3a flag count
+  as planned investing in advice and linked account projections.
+- Mark Pillar 3a or retirement-style accounts with the Retirement flag so they
+  are treated as long-term investment assets even if the account type is
+  Savings.
+- Mark child-earmarked savings accounts with Kids saving. These balances stay
+  visible on the account but are excluded from household wealth projections and
+  emergency-fund buffers.
 - Use an investment budget item when the contribution is only a planning bucket
   with expected return assumptions and no real target account balance.
 - Do not enter the same monthly saving as both an investment budget item and a
   scheduled transfer unless you intentionally want both effects; that double
   counts the outflow in forecasts.
+- Emergency-fund targets use essential expenses only. Savings, retirement, and
+  investing transfers are treated as non-essential planned outflows, not as
+  emergency needs.
 
 Admin workflows:
 

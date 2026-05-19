@@ -4,19 +4,18 @@ import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { getActiveHouseholdId } from "@/lib/household";
 import { OwnershipError } from "@/lib/ownership";
 import { projectInvestment, summarizeProjection } from "@/lib/investment";
-import { toDecimal } from "@/lib/money";
+import { Decimal, toDecimal } from "@/lib/money";
+import { getExchangeRate } from "@/lib/exchange-rates";
+import { monthlyMultiplier } from "@/lib/recurrence";
 
 /**
  * GET /api/accounts/[id]/projection?horizonYears=25
  *
- * Projects an investment-type bank account forward using its
+ * Projects an investment or retirement bank account forward using its
  * `expectedAnnualReturn` and `monthlyManagementCost` fields. The starting
- * capital is the sum of the account's current pocket balances (we project
- * in the account's first currency to keep the chart single-axis); pockets
- * in other currencies are converted only at FX-snapshot time so this is a
- * pragmatic single-currency view. Returns the same shape as the
- * investment-projection result endpoint so the chart component can stay
- * generic.
+ * capital is the sum of the account's current pocket balances projected in
+ * the account's first currency to keep the chart single-axis. Scheduled
+ * transfers into the account are treated as recurring contributions.
  */
 export async function GET(
   req: NextRequest,
@@ -37,13 +36,15 @@ export async function GET(
     });
     if (!account) throw new OwnershipError("Account not found", 404);
 
-    if (account.accountType !== "investment") {
+    if (account.accountType !== "investment" && !account.retirement) {
       return jsonError(
-        "Projection is only available for investment-type accounts",
+        "Projection is only available for investment or retirement accounts",
         400
       );
     }
-    if (!account.expectedAnnualReturn) {
+    const expectedAnnualReturn =
+      account.expectedAnnualReturn ?? account.annualInterestRate;
+    if (!expectedAnnualReturn) {
       return jsonError(
         "This account has no expected annual return configured",
         400
@@ -57,10 +58,47 @@ export async function GET(
     if (!dominant) {
       return jsonError("Account has no currency pockets", 400);
     }
+    const rateCache = new Map<string, Decimal>();
+    async function rate(from: string, to: string): Promise<Decimal> {
+      const source = from.toUpperCase();
+      const target = to.toUpperCase();
+      if (source === target) return toDecimal(1);
+      const key = `${source}:${target}`;
+      let cached = rateCache.get(key);
+      if (!cached) {
+        cached = (await getExchangeRate(source, target)).rate;
+        rateCache.set(key, cached);
+      }
+      return cached;
+    }
     const startingCapital = account.currencies.reduce(
       (acc, c) => acc.plus(toDecimal(c.currentBalance)),
       toDecimal(0)
     );
+    const transfers = await prisma.scheduledTransfer.findMany({
+      where: {
+        householdId,
+        targetAccountId: account.id,
+        active: true,
+        deletedAt: null
+      },
+      include: { sourceAccount: true }
+    });
+    let recurringContribution = toDecimal(0);
+    for (const transfer of transfers) {
+      if (transfer.sourceAccount.accountType === "investment") continue;
+      if (transfer.sourceAccount.retirement) continue;
+      const sourceAmount = toDecimal(transfer.amount);
+      const targetAmount = sourceAmount.mul(
+        await rate(transfer.sourceCurrency, transfer.targetCurrency)
+      );
+      const dominantAmount = targetAmount.mul(
+        await rate(transfer.targetCurrency, dominant.currency)
+      );
+      recurringContribution = recurringContribution.plus(
+        dominantAmount.mul(monthlyMultiplier(transfer.recurrence))
+      );
+    }
 
     // Annualise the monthlyManagementCost so projectInvestment can subtract
     // it via the fee drag mechanism: monthlyCost / startingCapital * 12 gives
@@ -78,9 +116,9 @@ export async function GET(
 
     const series = projectInvestment({
       startingCapital,
-      recurringContribution: 0,
+      recurringContribution,
       contributionFrequency: "monthly",
-      expectedAnnualReturn: account.expectedAnnualReturn,
+      expectedAnnualReturn,
       annualFeeDrag,
       inflationRate: "0.02",
       horizonYears
@@ -92,6 +130,7 @@ export async function GET(
       name: account.name,
       currency: dominant.currency,
       summary: {
+        recurringContribution: recurringContribution.toString(),
         totalContributions: summary.totalContributions.toString(),
         finalNominal: summary.finalNominal.toString(),
         finalReal: summary.finalReal.toString(),

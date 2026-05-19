@@ -3,7 +3,7 @@
 ## Purpose
 
 This document summarizes the REST API surface used by TL Finance Core client
-components. It is not a public third-party API contract in v0.7.7.
+components. It is not a public third-party API contract in v0.7.8.
 
 ## Architecture
 
@@ -70,6 +70,11 @@ Scheduled transfers validate both selected account IDs and selected source /
 target currency pockets. A transfer can only debit a currency pocket that exists
 on the source account and credit a currency pocket that exists on the target
 account.
+
+Account create/update payloads accept `retirement?: boolean` and
+`kidsSavings?: boolean`. Kids saving is only retained for Savings accounts and
+clears the retirement flag. Retirement accounts are eligible for investment
+account projections even when their account type remains Savings.
 
 Household selection routes:
 

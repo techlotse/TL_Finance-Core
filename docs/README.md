@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This folder contains the public documentation set for TL Finance Core v0.7.7.
+This folder contains the public documentation set for TL Finance Core v0.7.8.
 The structure is intentionally grouped by module so the public repository does
 not expose stale root-level planning material.
 

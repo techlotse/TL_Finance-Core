@@ -51,6 +51,8 @@ export interface HouseholdExport {
     annualInterestRate: string | null;
     expectedAnnualReturn: string | null;
     monthlyManagementCost: string | null;
+    retirement?: boolean;
+    kidsSavings?: boolean;
     minimumMonthlyPayment: string | null;
     currencies: Array<{
       currency: string;
@@ -214,6 +216,8 @@ export async function exportHousehold(householdId: string): Promise<HouseholdExp
       annualInterestRate: a.annualInterestRate?.toString() ?? null,
       expectedAnnualReturn: a.expectedAnnualReturn?.toString() ?? null,
       monthlyManagementCost: a.monthlyManagementCost?.toString() ?? null,
+      retirement: a.retirement,
+      kidsSavings: a.kidsSavings,
       minimumMonthlyPayment: a.minimumMonthlyPayment?.toString() ?? null,
       currencies: a.currencies.map((c) => ({
         currency: c.currency,
@@ -435,6 +439,9 @@ export async function importHousehold(
           // Don't overwrite currency balances on a merge — would surprise the user.
           continue;
         }
+        const kidsSavings =
+          a.accountType === "savings" && a.kidsSavings === true;
+        const retirement = kidsSavings ? false : a.retirement === true;
         const created = await tx.bankAccount.create({
           data: {
             householdId,
@@ -443,6 +450,8 @@ export async function importHousehold(
             accountType: a.accountType,
             notes: a.notes,
             active: a.active,
+            retirement,
+            kidsSavings,
             monthlyCost: a.monthlyCost ?? null,
             monthlyCostCurrency: a.monthlyCostCurrency,
             annualInterestRate: a.annualInterestRate ?? null,
@@ -653,4 +662,3 @@ export async function importHousehold(
 
   return result;
 }
-

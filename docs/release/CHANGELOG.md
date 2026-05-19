@@ -36,9 +36,31 @@ Docker Hub publishing is enabled.
 
 Changed:
 
+- No public changes yet.
+
+## v0.7.8 - 2026-05-19
+
+Financial planning bugfixes.
+
+Changed:
+
 - Added admin user-access management under `/admin/users` so an admin can
   manually grant Core, Smart, or AI access and suspend/reactivate accounts
   without changing user roles.
+- Added account-level Retirement / Pillar 3a and Kids saving flags.
+- Included retirement-flagged accounts in investment planning and Investments
+  page account projections.
+- Included scheduled transfers into investment or retirement accounts as
+  recurring contributions in investment-account projection charts.
+- Counted ordinary savings accounts toward emergency reserves while excluding
+  kids savings and retirement accounts from emergency-fund buffers.
+- Changed emergency-fund targets to 3 months when essentials fit within the
+  lowest earner's monthly income, or 5 months when they do not.
+- Dropped underfunded emergency recommendations to medium priority when cash
+  savings exceed monthly household income and non-retirement investments exceed
+  annual household income.
+- Excluded Kids saving accounts from household wealth forecast totals while
+  still showing their account-level balances.
 - Fixed account monthly fee currency handling so edited non-CHF pockets do not
   silently submit stale CHF values, and AI advice receives the native fee
   currency plus base-currency equivalent.

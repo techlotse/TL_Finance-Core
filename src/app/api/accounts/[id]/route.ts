@@ -26,6 +26,9 @@ export async function PATCH(
         where: { id, householdId },
         select: {
           id: true,
+          accountType: true,
+          retirement: true,
+          kidsSavings: true,
           monthlyCost: true,
           monthlyCostCurrency: true,
           currencies: {
@@ -35,6 +38,14 @@ export async function PATCH(
         }
       });
       if (!found) throw new OwnershipError("Account not found", 404);
+      const nextAccountType = body.accountType ?? found.accountType;
+      const nextKidsSavings =
+        nextAccountType === "savings"
+          ? body.kidsSavings ?? found.kidsSavings
+          : false;
+      const nextRetirement = nextKidsSavings
+        ? false
+        : body.retirement ?? found.retirement;
       const nextCurrencies = body.currencies ?? found.currencies;
       const nextCostCurrencyInput =
         body.monthlyCostCurrency === undefined
@@ -65,6 +76,8 @@ export async function PATCH(
           accountType: body.accountType,
           notes: body.notes,
           active: body.active,
+          retirement: nextRetirement,
+          kidsSavings: nextKidsSavings,
           monthlyCost: body.monthlyCost,
           monthlyCostCurrency: nextMonthlyCostCurrency,
           annualInterestRate: body.annualInterestRate,

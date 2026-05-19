@@ -1,18 +1,19 @@
 # TL Finance Core - Repository Overview
 
 [![Docker Build](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/techlotse/TL-Finance-Core/actions/workflows/docker-publish.yml)
-[![Version](https://img.shields.io/badge/version-0.7.7-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.7)
+[![Version](https://img.shields.io/badge/version-0.7.8-7A3CFF)](https://github.com/techlotse/TL-Finance-Core/releases/tag/v0.7.8)
 [![License](https://img.shields.io/badge/license-Source%20Available-00D1C7)](./LICENSE)
 
 ## Purpose
 
 TL Finance Core is a Docker-first household finance application for budgeting,
 forecasting, account tracking, asset tracking, debt visibility, and investment
-projection. The v0.7.7 release keeps the public handoff feature set stable,
+projection. The v0.7.8 release keeps the public handoff feature set stable,
 adds security hardening on top of hosted payment-link readiness and HA
 deployment planning, automates GitHub release creation after verified `main`
-builds, and updates the Docker base runtime to mitigate current npm CVE risk
-before the v0.8.0 public-alpha cut.
+builds, mitigates current npm CVE risk, and tightens retirement, kids-savings,
+investment-transfer, and emergency-fund planning before the v0.8.0
+public-alpha cut.
 
 The product is built for privacy-preserving self-hosting first. It includes
 first-party email/password authentication, PostgreSQL persistence, tenant-scoped
@@ -135,7 +136,7 @@ Public documentation:
 - If the multinode database does not initialize, verify shell scripts are LF
   and that the postgres `command:` remains YAML list form.
 - The PostgreSQL replica is available for standby/failover, but Prisma reads
-  and writes through the primary in v0.7.7.
+  and writes through the primary in v0.7.8.
 - SMTP delivery and hosted payment-link setup are available through admin
   configuration. Scheduled backup execution, S3-compatible upload, and payment
   webhook fulfillment remain roadmap items.

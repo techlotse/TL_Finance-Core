@@ -1,0 +1,2 @@
+ALTER TABLE "BankAccount" ADD COLUMN "retirement" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "BankAccount" ADD COLUMN "kidsSavings" BOOLEAN NOT NULL DEFAULT false;

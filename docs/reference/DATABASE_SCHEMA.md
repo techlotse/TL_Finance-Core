@@ -3,7 +3,7 @@
 ## Purpose
 
 This document records the current PostgreSQL schema shape and migration policy
-for TL Finance Core v0.7.7.
+for TL Finance Core v0.7.8.
 
 ## Architecture
 
@@ -20,6 +20,7 @@ Applied migrations:
 | `20260429140000_assets_and_account_extensions` | Assets, investment-account fields, debt-account fields |
 | `20260502100000_product_tiers_and_ai_config` | Product tier and AI provider configuration |
 | `20260513210000_payment_config` | Admin payment-link configuration |
+| `20260519120000_account_planning_flags` | Retirement/Pillar 3a and kids-savings account flags |
 
 Schema highlights:
 
@@ -43,6 +44,8 @@ Schema highlights:
 | --- | --- |
 | `annualInterestRate` | Savings (interest earned), credit (APR charged) |
 | `expectedAnnualReturn`, `monthlyManagementCost` | Investments page projection for investment-type accounts |
+| `retirement` | Pillar 3a / pension-style planning; makes the account eligible for investment projections |
+| `kidsSavings` | Child-earmarked savings excluded from household wealth and emergency buffers |
 | `minimumMonthlyPayment` | Debt page payoff projection for credit-type accounts |
 
 ## Configuration

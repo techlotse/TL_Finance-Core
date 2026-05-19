@@ -17,9 +17,9 @@ export interface ForecastPoint {
   /** ISO month: YYYY-MM */
   month: string;
   date: Date;
-  /** Total of liquid account balances in base currency. */
+  /** Household account total in base currency, excluding kids savings. */
   totalBaseCurrency: Decimal;
-  /** Net worth = liquid accounts + accumulated investment-item balances. */
+  /** Net worth = household accounts + accumulated investment-item balances. */
   netWorthBaseCurrency: Decimal;
   accountBalances: Record<string, Decimal>;
   /** Per investment-typed budget item, the accumulated notional balance. */
@@ -51,6 +51,8 @@ export interface ForecastInputs {
  *   counted as expense (the synthetic "Financial Management → Bank Charges").
  * - Savings interest: when accountType = savings, each currency pocket accrues
  *   (1 + annualInterestRate)^(1/12) − 1 each month.
+ * - Kids-savings accounts retain their per-account forecast but are excluded
+ *   from household wealth totals.
  */
 export async function forecastBalances(
   inputs: ForecastInputs
@@ -234,7 +236,7 @@ export async function forecastBalances(
         );
       }
       accountBalances[acc.id] = perAccount;
-      total = total.plus(perAccount);
+      if (!acc.kidsSavings) total = total.plus(perAccount);
     }
 
     // Unassigned pool — count toward totals so net cashflow ≈ Δtotal.
