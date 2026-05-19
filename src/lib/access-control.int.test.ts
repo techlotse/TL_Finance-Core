@@ -26,6 +26,7 @@ import {
   PATCH as patchTransfer,
   DELETE as deleteTransfer
 } from "@/app/api/transfers/[id]/route";
+import { POST as createTransfer } from "@/app/api/transfers/route";
 import {
   PATCH as patchAsset,
   DELETE as deleteAsset
@@ -588,6 +589,26 @@ describe("v0.7 auth and access controls", () => {
       const res = await callIdRoute(handler, "PATCH", id, body);
       expect(res.status, name).toBe(404);
     }
+  });
+
+  it("rejects scheduled transfer currencies that are not pockets on the selected accounts", async () => {
+    const fixture = await seedAccessScenario();
+    setCookies({ [SESSION_COOKIE]: fixture.aliceToken });
+
+    const res = await createTransfer(
+      jsonRequest("http://localhost/api/transfers", "POST", {
+        name: "Invalid currency transfer",
+        sourceAccountId: fixture.aliceAccount.id,
+        sourceCurrency: "USD",
+        targetAccountId: fixture.aliceSavings.id,
+        targetCurrency: "CHF",
+        amount: "100",
+        recurrence: "monthly",
+        startDate: "2026-05-25T00:00:00.000Z"
+      })
+    );
+
+    expect(res.status).toBe(404);
   });
 
   it("rejects admin config updates from non-admin users", async () => {

@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
 
     await assertTransferFkOwnership(householdId, {
       sourceAccountId: body.sourceAccountId,
-      targetAccountId: body.targetAccountId
+      sourceCurrency: body.sourceCurrency,
+      targetAccountId: body.targetAccountId,
+      targetCurrency: body.targetCurrency
     });
 
     const created = await prisma.scheduledTransfer.create({

@@ -79,6 +79,8 @@ payloads reference rows by stable names instead of database IDs.
 - Unique category names are scoped by household and group.
 - Balance snapshots mirror the latest known current balance.
 - `BankAccount.monthlyCost` is a virtual forecast cost, not an auto-created
-  budget line item.
+  budget line item. Its currency is `monthlyCostCurrency`; if older data lacks
+  that field, the app uses the account's first currency pocket before falling
+  back to the household base currency.
 - `InvestmentProjection` can be standalone or attached to a real investment
   account.

@@ -39,6 +39,14 @@ Changed:
 - Added admin user-access management under `/admin/users` so an admin can
   manually grant Core, Smart, or AI access and suspend/reactivate accounts
   without changing user roles.
+- Fixed account monthly fee currency handling so edited non-CHF pockets do not
+  silently submit stale CHF values, and AI advice receives the native fee
+  currency plus base-currency equivalent.
+- Tightened scheduled-transfer validation so source and target currencies must
+  exist as pockets on their selected accounts.
+- Counted scheduled transfers into investment-type accounts as planned
+  investing for Smart/AI analysis, without requiring a duplicate investment
+  budget item.
 
 ## v0.7.7 - 2026-05-15
 

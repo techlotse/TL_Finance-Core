@@ -94,12 +94,54 @@ export async function assertBudgetItemFkOwnership(
 
 export async function assertTransferFkOwnership(
   householdId: string,
-  fks: { sourceAccountId?: string; targetAccountId?: string }
+  fks: {
+    sourceAccountId?: string;
+    sourceCurrency?: string;
+    targetAccountId?: string;
+    targetCurrency?: string;
+  }
 ): Promise<void> {
   const checks: Promise<void>[] = [];
   if (fks.sourceAccountId)
     checks.push(assertAccountOwnership(householdId, fks.sourceAccountId));
   if (fks.targetAccountId)
     checks.push(assertAccountOwnership(householdId, fks.targetAccountId));
+  if (fks.sourceAccountId && fks.sourceCurrency) {
+    checks.push(
+      assertAccountCurrencyOwnership(
+        householdId,
+        fks.sourceAccountId,
+        fks.sourceCurrency,
+        "Source currency not found on account"
+      )
+    );
+  }
+  if (fks.targetAccountId && fks.targetCurrency) {
+    checks.push(
+      assertAccountCurrencyOwnership(
+        householdId,
+        fks.targetAccountId,
+        fks.targetCurrency,
+        "Target currency not found on account"
+      )
+    );
+  }
   await Promise.all(checks);
+}
+
+export async function assertAccountCurrencyOwnership(
+  householdId: string,
+  accountId: string,
+  currency: string,
+  message = "Account currency not found"
+): Promise<void> {
+  const pocket = await prisma.bankAccountCurrency.findFirst({
+    where: {
+      accountId,
+      currency: currency.toUpperCase(),
+      account: { householdId }
+    },
+    select: { id: true }
+  });
+  if (!pocket) throw new OwnershipError(message, 404);
 }

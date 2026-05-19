@@ -8,6 +8,7 @@ import {
 import { Decimal, toDecimal } from "./money";
 import { occurrencesInMonth, monthlyMultiplier as monthlyMultiplierFromRecurrence } from "./recurrence";
 import { convertManyToBase, getExchangeRate } from "./exchange-rates";
+import { effectiveMonthlyCostCurrency } from "./account-currency";
 
 export const ALLOWED_HORIZONS = [1, 3, 5, 10, 15, 20, 25] as const;
 export type Horizon = (typeof ALLOWED_HORIZONS)[number];
@@ -165,7 +166,7 @@ export async function forecastBalances(
       if (!acc.active || !acc.monthlyCost) continue;
       const cost = toDecimal(acc.monthlyCost);
       if (cost.eq(0)) continue;
-      const cur = (acc.monthlyCostCurrency ?? inputs.baseCurrency).toUpperCase();
+      const cur = effectiveMonthlyCostCurrency(acc, inputs.baseCurrency);
       const k = key(acc.id, cur);
       balances.set(k, (balances.get(k) ?? new Decimal(0)).minus(cost));
       monthlyExpenses = monthlyExpenses.plus(
@@ -458,8 +459,10 @@ export async function forecastDailyForAccount(
   if (inputs.account.monthlyCost) {
     const cost = toDecimal(inputs.account.monthlyCost);
     if (!cost.eq(0)) {
-      const cur =
-        (inputs.account.monthlyCostCurrency ?? inputs.baseCurrency).toUpperCase();
+      const cur = effectiveMonthlyCostCurrency(
+        inputs.account,
+        inputs.baseCurrency
+      );
       const cursor = new Date(winStart.getFullYear(), winStart.getMonth(), 1);
       while (cursor <= winEnd) {
         if (cursor >= winStart) {
@@ -773,7 +776,7 @@ export async function summarizeMonthlyBudget(
     .filter((a) => a.active && a.monthlyCost && !toDecimal(a.monthlyCost).eq(0))
     .map((a) => ({
       amount: toDecimal(a.monthlyCost!),
-      currency: a.monthlyCostCurrency ?? baseCurrency
+      currency: effectiveMonthlyCostCurrency(a, baseCurrency)
     }));
 
   const incomeRes = await convertManyToBase(incomes, baseCurrency);

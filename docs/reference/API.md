@@ -66,6 +66,11 @@ Expected mutation rules:
 5. Write an audit event.
 6. Return serialized plain data.
 
+Scheduled transfers validate both selected account IDs and selected source /
+target currency pockets. A transfer can only debit a currency pocket that exists
+on the source account and credit a currency pocket that exists on the target
+account.
+
 Household selection routes:
 
 - `GET /api/household/list` returns the signed-in user's memberships and the

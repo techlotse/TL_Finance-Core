@@ -16,9 +16,22 @@ export async function PATCH(
     const { id } = await params;
     const body = transferPatchSchema.parse(await req.json());
 
+    const existing = await prisma.scheduledTransfer.findFirst({
+      where: { id, householdId },
+      select: {
+        sourceAccountId: true,
+        sourceCurrency: true,
+        targetAccountId: true,
+        targetCurrency: true
+      }
+    });
+    if (!existing) throw new OwnershipError("Transfer not found", 404);
+
     await assertTransferFkOwnership(householdId, {
-      sourceAccountId: body.sourceAccountId,
-      targetAccountId: body.targetAccountId
+      sourceAccountId: body.sourceAccountId ?? existing.sourceAccountId,
+      sourceCurrency: body.sourceCurrency ?? existing.sourceCurrency,
+      targetAccountId: body.targetAccountId ?? existing.targetAccountId,
+      targetCurrency: body.targetCurrency ?? existing.targetCurrency
     });
 
     const updated = await prisma.$transaction(async (tx) => {

@@ -8,13 +8,15 @@ import type {
   Category,
   CategoryGroup,
   IncomeEarner,
-  InvestmentProjection
+  InvestmentProjection,
+  ScheduledTransfer
 } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
 import { convertManyToBase, getExchangeRate } from "./exchange-rates";
 import { summarizeMonthlyBudget } from "./forecast";
 import { Decimal, toDecimal } from "./money";
 import { monthlyMultiplier } from "./recurrence";
+import { effectiveMonthlyCostCurrency } from "./account-currency";
 
 type BudgetItemWithRelations = BudgetLineItem & {
   category: Category & { group: CategoryGroup };
@@ -23,6 +25,11 @@ type BudgetItemWithRelations = BudgetLineItem & {
 
 type AccountWithCurrencies = BankAccount & {
   currencies: BankAccountCurrency[];
+};
+
+type TransferWithAccounts = ScheduledTransfer & {
+  sourceAccount: BankAccount;
+  targetAccount: BankAccount;
 };
 
 export type AdvicePriority = "high" | "medium" | "low";
@@ -113,6 +120,8 @@ export interface FinancialSnapshot {
     annualInterestRate: string | null;
     expectedAnnualReturn: string | null;
     monthlyCost: string | null;
+    monthlyCostCurrency: string | null;
+    monthlyCostBase: string | null;
   }>;
   lowYieldSavings: Array<{
     id: string;
@@ -175,7 +184,7 @@ export async function buildFinancialSnapshot(
   });
   const baseCurrency = household.baseCurrency;
 
-  const [items, accounts, earners, assets, investmentProjections] =
+  const [items, accounts, earners, assets, investmentProjections, transfers] =
     await Promise.all([
       prisma.budgetLineItem.findMany({
         where: { householdId, active: true, deletedAt: null },
@@ -196,6 +205,10 @@ export async function buildFinancialSnapshot(
       }),
       prisma.investmentProjection.findMany({
         where: { householdId, active: true, deletedAt: null }
+      }),
+      prisma.scheduledTransfer.findMany({
+        where: { householdId, active: true, deletedAt: null },
+        include: { sourceAccount: true, targetAccount: true }
       })
     ]);
 
@@ -206,7 +219,8 @@ export async function buildFinancialSnapshot(
     accounts,
     earners,
     assets,
-    investmentProjections
+    investmentProjections,
+    transfers
   });
 }
 
@@ -217,7 +231,8 @@ export async function buildFinancialSnapshotFromData({
   accounts,
   earners,
   assets,
-  investmentProjections
+  investmentProjections,
+  transfers = []
 }: {
   householdId: string;
   baseCurrency: string;
@@ -226,6 +241,7 @@ export async function buildFinancialSnapshotFromData({
   earners: IncomeEarner[];
   assets: Asset[];
   investmentProjections: InvestmentProjection[];
+  transfers?: TransferWithAccounts[];
 }): Promise<FinancialSnapshot> {
   const rateCache = new Map<string, Decimal>();
   async function rate(from: string): Promise<Decimal> {
@@ -283,6 +299,20 @@ export async function buildFinancialSnapshotFromData({
   const bankCharges = summary.monthlyBankCharges;
   livingExpenses = livingExpenses.plus(bankCharges);
   essentialExpenses = essentialExpenses.plus(bankCharges);
+  let monthlyInvestmentTransfers = new Decimal(0);
+  for (const transfer of transfers) {
+    if (!transfer.active) continue;
+    if (transfer.targetAccount.accountType !== "investment") continue;
+    if (transfer.sourceAccount.accountType === "investment") continue;
+    const monthly = toDecimal(transfer.amount).mul(
+      monthlyMultiplier(transfer.recurrence)
+    );
+    monthlyInvestmentTransfers = monthlyInvestmentTransfers.plus(
+      monthly.mul(await rate(transfer.targetCurrency))
+    );
+  }
+  const plannedMonthlyInvestments =
+    summary.monthlyInvestmentContributions.plus(monthlyInvestmentTransfers);
 
   const accountRows: FinancialSnapshot["accounts"] = [];
   let liquid = new Decimal(0);
@@ -293,6 +323,15 @@ export async function buildFinancialSnapshotFromData({
 
   for (const account of accounts) {
     const balanceBase = await accountBalanceBase(account, baseCurrency);
+    const monthlyCostCurrency = account.monthlyCost
+      ? effectiveMonthlyCostCurrency(account, baseCurrency)
+      : null;
+    const monthlyCostBase =
+      account.monthlyCost && monthlyCostCurrency
+        ? toDecimal(account.monthlyCost)
+            .mul(await rate(monthlyCostCurrency))
+            .toString()
+        : null;
     accountRows.push({
       id: account.id,
       name: account.name,
@@ -300,7 +339,9 @@ export async function buildFinancialSnapshotFromData({
       balanceBase: balanceBase.toString(),
       annualInterestRate: account.annualInterestRate?.toString() ?? null,
       expectedAnnualReturn: account.expectedAnnualReturn?.toString() ?? null,
-      monthlyCost: account.monthlyCost?.toString() ?? null
+      monthlyCost: account.monthlyCost?.toString() ?? null,
+      monthlyCostCurrency,
+      monthlyCostBase
     });
 
     if (["current", "cash"].includes(account.accountType)) {
@@ -361,8 +402,8 @@ export async function buildFinancialSnapshotFromData({
     ? liquid.div(essentialExpenses)
     : new Decimal(999);
 
-  const savingsCapacity = summary.monthlyInvestmentContributions.plus(
-    Decimal.max(summary.net, new Decimal(0))
+  const savingsCapacity = plannedMonthlyInvestments.plus(
+    Decimal.max(summary.net.minus(monthlyInvestmentTransfers), new Decimal(0))
   );
   const savingsRate = summary.monthlyIncome.gt(0)
     ? savingsCapacity.div(summary.monthlyIncome)
@@ -413,8 +454,7 @@ export async function buildFinancialSnapshotFromData({
     monthly: {
       income: summary.monthlyIncome.toString(),
       livingExpenses: livingExpenses.toString(),
-      investmentContributions:
-        summary.monthlyInvestmentContributions.toString(),
+      investmentContributions: plannedMonthlyInvestments.toString(),
       bankCharges: summary.monthlyBankCharges.toString(),
       netAfterPlannedOutflows: summary.net.toString(),
       savingsCapacity: savingsCapacity.toString(),
@@ -459,7 +499,7 @@ export async function buildFinancialSnapshotFromData({
       hasRetirementPlanning:
         hasRetirementSignal(items) || investmentProjections.length > 0,
       hasInvestmentAccounts:
-        investments.gt(0) || summary.monthlyInvestmentContributions.gt(0),
+        investments.gt(0) || plannedMonthlyInvestments.gt(0),
       hasHighInterestDebt: accountRows.some(
         (account) =>
           account.accountType === "credit" &&
@@ -739,6 +779,13 @@ export function snapshotForAi(snapshot: FinancialSnapshot) {
       annualInterestRate: account.annualInterestRate,
       expectedAnnualReturn: account.expectedAnnualReturn,
       monthlyCost: account.monthlyCost
+        ? {
+            amount: account.monthlyCost,
+            currency: account.monthlyCostCurrency,
+            baseAmount: account.monthlyCostBase,
+            baseCurrency: snapshot.baseCurrency
+          }
+        : null
     })),
     earners: snapshot.earners.map((earner, index) => ({
       label: `Earner ${index + 1}`,

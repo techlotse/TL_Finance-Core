@@ -11,6 +11,10 @@ import { FormField } from "@/components/ui/label";
 import { Dialog } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { MoneyAmount } from "@/components/money-amount";
+import {
+  effectiveMonthlyCostCurrency,
+  normaliseCurrencyCode
+} from "@/lib/account-currency";
 import { UpdateBalancesDialog } from "./update-balances-dialog";
 
 type AccountType = "current" | "savings" | "investment" | "credit" | "cash" | "other";
@@ -156,7 +160,7 @@ export function AccountsClient({
                         Monthly fee:{" "}
                         <MoneyAmount
                           value={a.monthlyCost}
-                          currency={a.monthlyCostCurrency ?? "CHF"}
+                          currency={effectiveMonthlyCostCurrency(a, "CHF")}
                         />
                       </span>
                     )}
@@ -254,8 +258,9 @@ function AccountFormDialog({
     notes: existing?.notes ?? "",
     active: existing?.active ?? true,
     monthlyCost: existing?.monthlyCost ?? "",
-    monthlyCostCurrency:
-      existing?.monthlyCostCurrency ?? existing?.currencies[0]?.currency ?? "CHF",
+    monthlyCostCurrency: existing
+      ? effectiveMonthlyCostCurrency(existing, "CHF")
+      : "CHF",
     annualInterestRate: existing?.annualInterestRate ?? "",
     expectedAnnualReturn: existing?.expectedAnnualReturn ?? "",
     monthlyManagementCost: existing?.monthlyManagementCost ?? "",
@@ -272,12 +277,29 @@ function AccountFormDialog({
   const [error, setError] = React.useState<string | null>(null);
 
   function updatePocket(idx: number, patch: Partial<typeof form.currencies[number]>) {
-    setForm((prev) => ({
-      ...prev,
-      currencies: prev.currencies.map((c, i) =>
-        i === idx ? { ...c, ...patch } : c
-      )
-    }));
+    setForm((prev) =>
+      syncCostCurrency({
+        ...prev,
+        currencies: prev.currencies.map((c, i) =>
+          i === idx ? { ...c, ...patch } : c
+        )
+      })
+    );
+  }
+  function syncCostCurrency(next: typeof form) {
+    const codes = next.currencies
+      .map((c) => normaliseCurrencyCode(c.currency))
+      .filter((code): code is string => Boolean(code));
+    const current = normaliseCurrencyCode(next.monthlyCostCurrency);
+    if (current && codes.includes(current)) return next;
+    return {
+      ...next,
+      monthlyCostCurrency: codes[0] ?? "CHF"
+    };
+  }
+  function accountCostCurrencyForSubmit() {
+    const synced = syncCostCurrency(form);
+    return normaliseCurrencyCode(synced.monthlyCostCurrency) ?? "CHF";
   }
   function addPocket() {
     setForm((prev) => ({
@@ -289,10 +311,12 @@ function AccountFormDialog({
     }));
   }
   function removePocket(idx: number) {
-    setForm((prev) => ({
-      ...prev,
-      currencies: prev.currencies.filter((_, i) => i !== idx)
-    }));
+    setForm((prev) =>
+      syncCostCurrency({
+        ...prev,
+        currencies: prev.currencies.filter((_, i) => i !== idx)
+      })
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -308,7 +332,7 @@ function AccountFormDialog({
         active: form.active,
         monthlyCost: form.monthlyCost ? form.monthlyCost : null,
         monthlyCostCurrency: form.monthlyCost
-          ? (form.monthlyCostCurrency || form.currencies[0]?.currency || "CHF").toUpperCase()
+          ? accountCostCurrencyForSubmit()
           : null,
         // Annual interest rate covers two cases: savings (interest earned)
         // and credit (interest charged). Only persist when the account type

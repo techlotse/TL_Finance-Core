@@ -239,6 +239,16 @@ function TransferFormDialog({
   const targetCurrencies = accounts.find((a) => a.id === form.targetAccountId)
     ?.currencies ?? [];
 
+  function currenciesFor(accountId: string) {
+    return accounts.find((a) => a.id === accountId)?.currencies ?? [];
+  }
+
+  function validCurrencyFor(accountId: string, current: string) {
+    const codes = currenciesFor(accountId).map((c) => c.currency.toUpperCase());
+    const selected = current.toUpperCase();
+    return codes.includes(selected) ? selected : codes[0] ?? selected;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -248,9 +258,15 @@ function TransferFormDialog({
         name: form.name,
         amount: form.amount,
         sourceAccountId: form.sourceAccountId,
-        sourceCurrency: form.sourceCurrency,
+        sourceCurrency: validCurrencyFor(
+          form.sourceAccountId,
+          form.sourceCurrency
+        ),
         targetAccountId: form.targetAccountId,
-        targetCurrency: form.targetCurrency,
+        targetCurrency: validCurrencyFor(
+          form.targetAccountId,
+          form.targetCurrency
+        ),
         recurrence: form.recurrence,
         startDate: new Date(form.startDate).toISOString(),
         endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
@@ -320,9 +336,17 @@ function TransferFormDialog({
           <FormField label="Source account">
             <Select
               value={form.sourceAccountId}
-              onChange={(e) =>
-                setForm({ ...form, sourceAccountId: e.target.value })
-              }
+              onChange={(e) => {
+                const sourceAccountId = e.target.value;
+                setForm({
+                  ...form,
+                  sourceAccountId,
+                  sourceCurrency: validCurrencyFor(
+                    sourceAccountId,
+                    form.sourceCurrency
+                  )
+                });
+              }}
               required
             >
               {accounts.map((a) => (
@@ -356,9 +380,17 @@ function TransferFormDialog({
           <FormField label="Target account">
             <Select
               value={form.targetAccountId}
-              onChange={(e) =>
-                setForm({ ...form, targetAccountId: e.target.value })
-              }
+              onChange={(e) => {
+                const targetAccountId = e.target.value;
+                setForm({
+                  ...form,
+                  targetAccountId,
+                  targetCurrency: validCurrencyFor(
+                    targetAccountId,
+                    form.targetCurrency
+                  )
+                });
+              }}
               required
             >
               {accounts.map((a) => (

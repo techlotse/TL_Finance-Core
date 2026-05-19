@@ -6,6 +6,7 @@ import { getActiveHouseholdId } from "@/lib/household";
 import { OwnershipError } from "@/lib/ownership";
 import { writeAudit } from "@/lib/audit";
 import { ipHashFromHeaders } from "@/lib/auth";
+import { effectiveMonthlyCostCurrency } from "@/lib/account-currency";
 
 export async function PATCH(
   req: NextRequest,
@@ -23,9 +24,38 @@ export async function PATCH(
     const updated = await prisma.$transaction(async (tx) => {
       const found = await tx.bankAccount.findFirst({
         where: { id, householdId },
-        select: { id: true }
+        select: {
+          id: true,
+          monthlyCost: true,
+          monthlyCostCurrency: true,
+          currencies: {
+            select: { currency: true },
+            orderBy: { createdAt: "asc" }
+          }
+        }
       });
       if (!found) throw new OwnershipError("Account not found", 404);
+      const nextCurrencies = body.currencies ?? found.currencies;
+      const nextCostCurrencyInput =
+        body.monthlyCostCurrency === undefined
+          ? found.monthlyCostCurrency
+          : body.monthlyCostCurrency;
+      const shouldResolveMonthlyCostCurrency =
+        body.monthlyCost !== undefined ||
+        body.monthlyCostCurrency !== undefined ||
+        (body.currencies !== undefined && found.monthlyCost !== null);
+      const nextMonthlyCostCurrency =
+        body.monthlyCost === null
+          ? null
+          : shouldResolveMonthlyCostCurrency
+            ? effectiveMonthlyCostCurrency(
+                {
+                  monthlyCostCurrency: nextCostCurrencyInput,
+                  currencies: nextCurrencies
+                },
+                "CHF"
+              )
+            : undefined;
 
       await tx.bankAccount.update({
         where: { id },
@@ -36,7 +66,7 @@ export async function PATCH(
           notes: body.notes,
           active: body.active,
           monthlyCost: body.monthlyCost,
-          monthlyCostCurrency: body.monthlyCostCurrency,
+          monthlyCostCurrency: nextMonthlyCostCurrency,
           annualInterestRate: body.annualInterestRate,
           expectedAnnualReturn: body.expectedAnnualReturn,
           monthlyManagementCost: body.monthlyManagementCost,

@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   buildClassicAdvice,
+  buildFinancialSnapshotFromData,
+  snapshotForAi,
   type FinancialSnapshot
 } from "./advice";
+
+type SnapshotInput = Parameters<typeof buildFinancialSnapshotFromData>[0];
+type SnapshotAccount = SnapshotInput["accounts"][number];
+type SnapshotTransfer = NonNullable<SnapshotInput["transfers"]>[number];
 
 function snapshot(overrides: Partial<FinancialSnapshot> = {}): FinancialSnapshot {
   const base: FinancialSnapshot = {
@@ -106,5 +112,114 @@ describe("buildClassicAdvice", () => {
     expect(advice.recommendations.map((r) => r.id)).toContain(
       "redeploy-excess-low-yield-cash"
     );
+  });
+});
+
+describe("snapshotForAi", () => {
+  it("keeps account monthly costs in native currency with a base equivalent", () => {
+    const aiSnapshot = snapshotForAi(
+      snapshot({
+        accounts: [
+          {
+            id: "acc_1",
+            name: "ZAR current account",
+            accountType: "current",
+            balanceBase: "650",
+            annualInterestRate: null,
+            expectedAnnualReturn: null,
+            monthlyCost: "495",
+            monthlyCostCurrency: "ZAR",
+            monthlyCostBase: "23.50"
+          }
+        ]
+      })
+    );
+
+    expect(aiSnapshot.accounts[0].monthlyCost).toEqual({
+      amount: "495",
+      currency: "ZAR",
+      baseAmount: "23.50",
+      baseCurrency: "CHF"
+    });
+  });
+});
+
+describe("buildFinancialSnapshotFromData", () => {
+  function account(
+    id: string,
+    accountType: SnapshotAccount["accountType"],
+    currentBalance: string
+  ): SnapshotAccount {
+    return {
+      id,
+      householdId: "hh_1",
+      name: id,
+      institution: null,
+      accountType,
+      monthlyCost: null,
+      monthlyCostCurrency: null,
+      annualInterestRate: null,
+      expectedAnnualReturn: null,
+      monthlyManagementCost: null,
+      minimumMonthlyPayment: null,
+      notes: null,
+      active: true,
+      deletedAt: null,
+      createdAt: new Date("2026-05-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-05-01T00:00:00.000Z"),
+      currencies: [
+        {
+          id: `${id}_chf`,
+          accountId: id,
+          currency: "CHF",
+          openingBalance:
+            "0" as unknown as SnapshotAccount["currencies"][number]["openingBalance"],
+          currentBalance:
+            currentBalance as unknown as SnapshotAccount["currencies"][number]["currentBalance"],
+          createdAt: new Date("2026-05-01T00:00:00.000Z"),
+          updatedAt: new Date("2026-05-01T00:00:00.000Z")
+        }
+      ]
+    };
+  }
+
+  it("treats transfers into investment accounts as planned investing", async () => {
+    const source = account("source", "current", "1000");
+    const target = account("target", "investment", "0");
+    const transfer: SnapshotTransfer = {
+      id: "tr_1",
+      householdId: "hh_1",
+      name: "Pillar 3a",
+      sourceAccountId: source.id,
+      sourceAccount: source,
+      sourceCurrency: "CHF",
+      targetAccountId: target.id,
+      targetAccount: target,
+      targetCurrency: "CHF",
+      amount: "300" as unknown as SnapshotTransfer["amount"],
+      recurrence: "monthly",
+      startDate: new Date("2026-05-25T00:00:00.000Z"),
+      endDate: null,
+      notes: null,
+      active: true,
+      deletedAt: null,
+      createdAt: new Date("2026-05-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-05-01T00:00:00.000Z")
+    };
+
+    const result = await buildFinancialSnapshotFromData({
+      householdId: "hh_1",
+      baseCurrency: "CHF",
+      items: [],
+      accounts: [source, target],
+      earners: [],
+      assets: [],
+      investmentProjections: [],
+      transfers: [transfer]
+    });
+
+    expect(result.monthly.investmentContributions).toBe("300");
+    expect(result.monthly.savingsCapacity).toBe("300");
+    expect(result.signals.hasInvestmentAccounts).toBe(true);
   });
 });

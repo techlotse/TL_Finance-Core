@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveHouseholdId } from "@/lib/household";
 import { handleApiError, jsonOk, serialize } from "@/lib/api";
 import { accountCreateSchema } from "@/lib/schemas";
+import { effectiveMonthlyCostCurrency } from "@/lib/account-currency";
 
 export async function GET() {
   try {
@@ -22,6 +23,15 @@ export async function POST(req: NextRequest) {
   try {
     const householdId = await getActiveHouseholdId();
     const body = accountCreateSchema.parse(await req.json());
+    const monthlyCostCurrency = body.monthlyCost
+      ? effectiveMonthlyCostCurrency(
+          {
+            monthlyCostCurrency: body.monthlyCostCurrency,
+            currencies: body.currencies
+          },
+          "CHF"
+        )
+      : null;
     const created = await prisma.bankAccount.create({
       data: {
         householdId,
@@ -31,7 +41,7 @@ export async function POST(req: NextRequest) {
         notes: body.notes ?? null,
         active: body.active ?? true,
         monthlyCost: body.monthlyCost ?? null,
-        monthlyCostCurrency: body.monthlyCostCurrency ?? null,
+        monthlyCostCurrency,
         annualInterestRate: body.annualInterestRate ?? null,
         expectedAnnualReturn: body.expectedAnnualReturn ?? null,
         monthlyManagementCost: body.monthlyManagementCost ?? null,
