@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes how to run TL Finance Core v0.7.8 locally, in Docker,
+This document describes how to run TL Finance Core v0.7.9 locally, in Docker,
 in the bundled multinode Docker Desktop topology, and in the public-alpha HA
 role topology.
 
@@ -131,6 +131,8 @@ Mail:
 - Configure SMTP in Admin -> Mail after first login.
 - Use port 587 with "Require STARTTLS" for most hosted SMTP providers, or port
   465 with "Implicit TLS / SSL" when the provider documents implicit TLS.
+- For Hostpoint SMTP, use `asmtp.mail.hostpoint.ch`, port `465`, and
+  "Implicit TLS / SSL".
 - Set From email to the verified sender address required by the provider.
 - Send the built-in test email before enabling required email verification or
   relying on password reset delivery.
@@ -139,7 +141,7 @@ Payments:
 
 - Configure public-alpha payment links in Admin -> Payments.
 - The user-facing flow appears under Settings -> Billing.
-- v0.7.8 redirects to hosted payment links only; webhook fulfillment is a
+- v0.7.9 redirects to hosted payment links only; webhook fulfillment is a
   v0.8.0 readiness item. See [PAYMENTS_ALPHA.md](PAYMENTS_ALPHA.md).
 
 ## Troubleshooting
@@ -147,6 +149,9 @@ Payments:
 - If the SMTP test fails, confirm the provider allows SMTP password/app-password
   authentication for the configured user and that the From email is an allowed
   sender.
+- If the admin mail UI reports a non-JSON response, check session state,
+  reverse-proxy routing for `/api/admin/config/mail/test`, and whether the
+  deployed image includes the current API route.
 - If Postgres fails to initialize in multinode, verify `docker-compose-multinode.yml`
   still uses YAML list form for the primary `command`.
 - If nginx returns 502, check `app-1` and `app-2` health checks.

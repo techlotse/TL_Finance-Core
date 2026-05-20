@@ -38,6 +38,25 @@ Changed:
 
 - No public changes yet.
 
+## v0.7.9 - 2026-05-20
+
+Swiss Bridge advice and SMTP diagnostics.
+
+Changed:
+
+- Added Swiss Bridge as a third advice module with three resilience tiers:
+  immediate cash bridge, three-month notice bridge, and twelve-month notice
+  extended cover.
+- Included Swiss Bridge context in AI advice requests.
+- Hardened admin SMTP save/test calls to request JSON explicitly and report
+  non-JSON proxy/auth responses with actionable context instead of raw JSON
+  parser failures.
+- Normalized blank optional SMTP fields to `null` before validation.
+- Added explicit SMTP TLS server-name configuration for providers such as
+  Hostpoint on implicit TLS port 465.
+- Added focused unit coverage for Swiss Bridge tier calculations and SMTP
+  transport options.
+
 ## v0.7.8 - 2026-05-19
 
 Financial planning bugfixes.

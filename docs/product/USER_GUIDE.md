@@ -3,7 +3,7 @@
 ## Purpose
 
 This guide explains how an instance user sets up and operates TL Finance Core
-v0.7.8.
+v0.7.9.
 
 ## Architecture
 
@@ -76,6 +76,10 @@ Savings and investment planning:
 - Emergency-fund targets use essential expenses only. Savings, retirement, and
   investing transfers are treated as non-essential planned outflows, not as
   emergency needs.
+- Swiss Bridge advice adds a three-tier Swiss-style unemployment bridge:
+  two months of immediate cash, one year of three-month notice cover, and two
+  years of longer notice cover. Retirement and Kids saving balances are
+  excluded from these bridge targets.
 
 Admin workflows:
 
@@ -94,4 +98,7 @@ Admin workflows:
 - If a forecast dips unexpectedly, inspect account fees, transfer dates,
   debit day of month, and recurring expenses.
 - If FX rates are stale, the app uses cached rates and surfaces a warning.
+- For Hostpoint SMTP, use host `asmtp.mail.hostpoint.ch`, port `465`, TLS mode
+  `Implicit TLS / SSL`, the full mailbox as SMTP user, and a From email that
+  Hostpoint allows for that mailbox.
 - If a destructive import is needed, export current data first.

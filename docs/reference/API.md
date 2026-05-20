@@ -3,7 +3,7 @@
 ## Purpose
 
 This document summarizes the REST API surface used by TL Finance Core client
-components. It is not a public third-party API contract in v0.7.8.
+components. It is not a public third-party API contract in v0.7.9.
 
 ## Architecture
 
@@ -92,6 +92,8 @@ Mail administration routes:
   username, and sealed password used by password reset and verification mail.
 - `POST /api/admin/config/mail/test` sends a test message to the signed-in
   admin email unless a recipient is supplied in the request body.
+- Admin mail UI calls request JSON explicitly and surface non-JSON responses as
+  deployment/session diagnostics.
 
 Payment routes:
 

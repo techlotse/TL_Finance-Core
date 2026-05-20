@@ -3,7 +3,11 @@ import { handleApiError, jsonError, jsonOk } from "@/lib/api";
 import { requireSession, ipHashFromHeaders } from "@/lib/auth";
 import { assertEmailVerifiedForAppAccess } from "@/lib/auth-policy";
 import { loadAdminConfig, revealSecret } from "@/lib/admin-config";
-import { buildClassicAdvice, buildFinancialSnapshot } from "@/lib/advice";
+import {
+  buildClassicAdvice,
+  buildFinancialSnapshot,
+  buildSwissBridgeAdvice
+} from "@/lib/advice";
 import { generateOpenAiAdvice } from "@/lib/openai-advice";
 import { hasPlanAtLeast, normaliseProductTier } from "@/lib/plans";
 import { writeAudit } from "@/lib/audit";
@@ -29,11 +33,13 @@ export async function POST(req: NextRequest) {
 
     const snapshot = await buildFinancialSnapshot(ctx.membership.householdId);
     const classicAdvice = buildClassicAdvice(snapshot);
+    const swissBridgeAdvice = buildSwissBridgeAdvice(snapshot);
     const aiAdvice = await generateOpenAiAdvice({
       apiKey,
       model: cfg.aiConfig.model,
       snapshot,
-      classicAdvice
+      classicAdvice,
+      swissBridgeAdvice
     });
 
     await writeAudit({

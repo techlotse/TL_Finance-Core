@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { loadPublicAdminConfig } from "@/lib/admin-config";
-import { buildClassicAdvice, buildFinancialSnapshot } from "@/lib/advice";
+import {
+  buildClassicAdvice,
+  buildFinancialSnapshot,
+  buildSwissBridgeAdvice
+} from "@/lib/advice";
 import { requirePageSession } from "@/lib/page-auth";
 import { hasPlanAtLeast, normaliseProductTier } from "@/lib/plans";
 import { PageHeader } from "@/components/page-header";
@@ -33,6 +37,7 @@ export default async function AdvicePage() {
           baseCurrency={ctx.membership.household.baseCurrency}
           aiConfigured={adminConfig.aiConfig.enabled && adminConfig.aiConfig.apiKeySet}
           classicAdvice={null}
+          swissBridgeAdvice={null}
           snapshot={null}
         />
       </>
@@ -41,6 +46,7 @@ export default async function AdvicePage() {
 
   const snapshot = await buildFinancialSnapshot(ctx.membership.householdId);
   const classicAdvice = buildClassicAdvice(snapshot);
+  const swissBridgeAdvice = buildSwissBridgeAdvice(snapshot);
 
   return (
     <>
@@ -58,6 +64,7 @@ export default async function AdvicePage() {
         baseCurrency={snapshot.baseCurrency}
         aiConfigured={adminConfig.aiConfig.enabled && adminConfig.aiConfig.apiKeySet}
         classicAdvice={classicAdvice}
+        swissBridgeAdvice={swissBridgeAdvice}
         snapshot={snapshot}
       />
     </>

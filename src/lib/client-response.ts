@@ -16,9 +16,15 @@ export async function readApiObject(res: Response, path: string): Promise<ApiObj
 
   if (!contentType.toLowerCase().includes("application/json")) {
     const preview = previewText(text);
+    const hint =
+      res.status === 401
+        ? " Check that the admin session is still signed in."
+        : res.status === 404
+          ? " Check that the deployed image includes this API route."
+          : "";
     throw new Error(
       `Expected JSON from ${path}, got ${contentType || "unknown content type"} ` +
-        `(HTTP ${res.status}).${preview ? ` Response starts: ${preview}` : ""}`
+        `(HTTP ${res.status}).${hint}${preview ? ` Response starts: ${preview}` : ""}`
     );
   }
 

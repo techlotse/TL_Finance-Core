@@ -90,6 +90,7 @@ Roadmap:
 - v0.7.6: automatic GitHub Releases after verified main builds.
 - v0.7.7: Docker base-image CVE mitigation on the Node 24 runtime.
 - v0.7.8: retirement, kids-savings, investment-transfer, and emergency-fund planning bugfixes.
+- v0.7.9: Swiss Bridge advice and Hostpoint-friendly SMTP diagnostics.
 - v0.8.0: public alpha in HA with a payment provider for the SaaS version.
 - v0.9.0: bug fixes and public beta readiness.
 - v1.0.0: stable public release with the v0.5.0 feature set preserved.

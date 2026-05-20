@@ -46,15 +46,17 @@ async function buildTransporter(): Promise<{
 } | null> {
   const cfg = await loadAdminConfig();
   const m = cfg.mailConfig;
-  if (m.provider !== "smtp" || !m.smtpHost || !m.smtpPort) return null;
+  const smtpHost = m.smtpHost?.trim();
+  if (m.provider !== "smtp" || !smtpHost || !m.smtpPort) return null;
 
   const password = revealSecret(m.smtpPasswordCipher);
   const transporter = nodemailer.createTransport({
-    host: m.smtpHost,
+    host: smtpHost,
     port: m.smtpPort,
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 20_000,
+    tls: { servername: smtpHost },
     ...smtpTlsOptions(m),
     auth:
       m.smtpUser && password

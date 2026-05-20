@@ -98,6 +98,7 @@ describe("sendMail", () => {
       expect.objectContaining({
         host: "smtp.example.test",
         port: 587,
+        tls: { servername: "smtp.example.test" },
         secure: false,
         requireTLS: true,
         auth: { user: "mailer@example.test", pass: "smtp-password" }
@@ -127,6 +128,7 @@ describe("sendMail", () => {
       expect.objectContaining({
         host: "smtp.example.test",
         port: 465,
+        tls: { servername: "smtp.example.test" },
         secure: true
       })
     );

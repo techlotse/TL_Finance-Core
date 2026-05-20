@@ -150,6 +150,28 @@ export interface ClassicAdviceResult {
   assumptions: string[];
 }
 
+export interface SwissBridgeTier {
+  id: "tier1" | "tier2" | "tier3";
+  title: string;
+  liquidityWindow: string;
+  targetAmount: string;
+  availableAmount: string;
+  gapAmount: string;
+  fundedRatio: string;
+  priority: AdvicePriority;
+  rationale: string;
+  action: string;
+}
+
+export interface SwissBridgeAdviceResult {
+  generatedAt: string;
+  baseCurrency: string;
+  monthlyEssentialExpenses: string;
+  monthlyBridgeGap: string;
+  tiers: SwissBridgeTier[];
+  assumptions: string[];
+}
+
 export const aiAdviceSchema = z.object({
   summary: z.string().min(1),
   recommendations: z
@@ -808,6 +830,92 @@ export function buildClassicAdvice(
   };
 }
 
+export function buildSwissBridgeAdvice(
+  snapshot: FinancialSnapshot
+): SwissBridgeAdviceResult {
+  const currency = snapshot.baseCurrency;
+  const essentialExpenses = toDecimal(snapshot.monthly.essentialExpenses);
+  const liquid = toDecimal(snapshot.balances.liquid);
+  const nonRetirementInvestments = toDecimal(
+    snapshot.balances.nonRetirementInvestments
+  );
+  const positiveIncomes = snapshot.earners
+    .map((earner) => toDecimal(earner.monthlyIncome))
+    .filter((income) => income.gt(0));
+  const highestEarnerIncome =
+    positiveIncomes.length > 0
+      ? Decimal.max(...positiveIncomes)
+      : new Decimal(0);
+  const lowestEarnerIncome =
+    positiveIncomes.length > 1
+      ? Decimal.min(...positiveIncomes)
+      : new Decimal(0);
+  const earnerIncomeGap = Decimal.max(
+    highestEarnerIncome.minus(lowestEarnerIncome),
+    new Decimal(0)
+  );
+  const monthlyBridgeGap = Decimal.max(
+    earnerIncomeGap,
+    toDecimal(snapshot.jobLoss.oneEarnerEssentialDeficit),
+    new Decimal(0)
+  );
+  const tier1Target = essentialExpenses.mul(2);
+  const remainingLiquidAfterTier1 = Decimal.max(
+    liquid.minus(tier1Target),
+    new Decimal(0)
+  );
+  const tier2Target = monthlyBridgeGap.mul(12);
+  const tier3Target = monthlyBridgeGap.mul(24);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    baseCurrency: currency,
+    monthlyEssentialExpenses: essentialExpenses.toString(),
+    monthlyBridgeGap: monthlyBridgeGap.toString(),
+    tiers: [
+      swissBridgeTier({
+        id: "tier1",
+        title: "Tier 1 - cash bridge",
+        liquidityWindow: "Same day to 1 month",
+        target: tier1Target,
+        available: liquid,
+        rationale:
+          "Covers the first two months of essential expenses while unemployment insurance or replacement income is still pending.",
+        action:
+          "Keep this tier in cash or immediate-access savings before allocating surplus to longer notice accounts."
+      }),
+      swissBridgeTier({
+        id: "tier2",
+        title: "Tier 2 - 3 month notice bridge",
+        liquidityWindow: "Up to 3 months",
+        target: tier2Target,
+        available: remainingLiquidAfterTier1.plus(nonRetirementInvestments),
+        rationale:
+          "Covers one year of the monthly gap between the highest and lowest earner, after the immediate cash bridge is reserved.",
+        action:
+          "Use ordinary savings, term deposits, or conservative taxable investments that can be released within roughly three months."
+      }),
+      swissBridgeTier({
+        id: "tier3",
+        title: "Tier 3 - long notice bridge",
+        liquidityWindow: "Up to 12 months",
+        target: tier3Target,
+        available: nonRetirementInvestments,
+        rationale:
+          "Covers two years of the same income gap using assets that can tolerate a slower liquidation plan.",
+        action:
+          "Keep this outside retirement and kids savings; review asset concentration before relying on it for extended unemployment."
+      })
+    ],
+    assumptions: [
+      "Swiss Bridge is a resilience ladder, not regulated insurance or tax advice.",
+      "Tier targets exclude retirement and kids-savings balances.",
+      "Tier 1 uses liquid cash and ordinary savings; Tier 2 and Tier 3 use non-retirement funds as liquidity estimates until account-level notice periods exist.",
+      "The bridge gap uses the larger of the highest-vs-lowest earner income gap and the essential-expense deficit after the largest earner loss."
+    ]
+  };
+}
+
 export function snapshotForAi(snapshot: FinancialSnapshot) {
   return {
     ...snapshot,
@@ -838,6 +946,47 @@ export function snapshotForAi(snapshot: FinancialSnapshot) {
       balanceBase: account.balanceBase,
       annualInterestRate: account.annualInterestRate
     }))
+  };
+}
+
+function swissBridgeTier({
+  id,
+  title,
+  liquidityWindow,
+  target,
+  available,
+  rationale,
+  action
+}: {
+  id: SwissBridgeTier["id"];
+  title: string;
+  liquidityWindow: string;
+  target: Decimal;
+  available: Decimal;
+  rationale: string;
+  action: string;
+}): SwissBridgeTier {
+  const gap = Decimal.max(target.minus(available), new Decimal(0));
+  const fundedRatio = target.gt(0)
+    ? Decimal.min(available.div(target), new Decimal(1))
+    : new Decimal(1);
+  const priority: AdvicePriority =
+    gap.eq(0) || target.eq(0)
+      ? "low"
+      : fundedRatio.lt("0.5")
+        ? "high"
+        : "medium";
+  return {
+    id,
+    title,
+    liquidityWindow,
+    targetAmount: target.toString(),
+    availableAmount: available.toString(),
+    gapAmount: gap.toString(),
+    fundedRatio: fundedRatio.toString(),
+    priority,
+    rationale,
+    action
   };
 }
 

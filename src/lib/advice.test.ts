@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildClassicAdvice,
   buildFinancialSnapshotFromData,
+  buildSwissBridgeAdvice,
   snapshotForAi,
   type FinancialSnapshot
 } from "./advice";
@@ -148,6 +149,74 @@ describe("snapshotForAi", () => {
       currency: "ZAR",
       baseAmount: "23.50",
       baseCurrency: "CHF"
+    });
+  });
+});
+
+describe("buildSwissBridgeAdvice", () => {
+  it("builds the three Swiss Bridge liquidity tiers", () => {
+    const bridge = buildSwissBridgeAdvice(
+      snapshot({
+        earners: [
+          { id: "earner_1", name: "Higher", monthlyIncome: "8000" },
+          { id: "earner_2", name: "Lower", monthlyIncome: "5000" }
+        ],
+        monthly: {
+          income: "13000",
+          livingExpenses: "6000",
+          investmentContributions: "1000",
+          bankCharges: "0",
+          netAfterPlannedOutflows: "6000",
+          savingsCapacity: "7000",
+          savingsRate: "0.5385",
+          essentialExpenses: "4000",
+          flexibleExpenses: "2000"
+        },
+        balances: {
+          liquid: "10000",
+          currentAndCash: "4000",
+          savings: "6000",
+          investments: "50000",
+          nonRetirementInvestments: "50000",
+          retirementInvestments: "0",
+          tangibleAssets: "0",
+          totalTracked: "60000",
+          creditDebt: "0"
+        },
+        jobLoss: {
+          largestEarnerMonthlyIncome: "8000",
+          remainingIncomeAfterLargestLoss: "5000",
+          oneEarnerEssentialDeficit: "0",
+          oneEarnerMonthsCovered: "999",
+          allEarnerMonthsCovered: "2.5",
+          redistributableMonthlyExpenses: "2000"
+        }
+      })
+    );
+
+    expect(bridge.monthlyBridgeGap).toBe("3000");
+    expect(bridge.tiers.map((tier) => tier.id)).toEqual([
+      "tier1",
+      "tier2",
+      "tier3"
+    ]);
+    expect(bridge.tiers[0]).toMatchObject({
+      targetAmount: "8000",
+      availableAmount: "10000",
+      gapAmount: "0",
+      priority: "low"
+    });
+    expect(bridge.tiers[1]).toMatchObject({
+      targetAmount: "36000",
+      availableAmount: "52000",
+      gapAmount: "0",
+      priority: "low"
+    });
+    expect(bridge.tiers[2]).toMatchObject({
+      targetAmount: "72000",
+      availableAmount: "50000",
+      gapAmount: "22000",
+      priority: "medium"
     });
   });
 });

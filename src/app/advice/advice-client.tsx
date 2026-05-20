@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import {
   AlertTriangle,
   BrainCircuit,
+  Landmark,
   PiggyBank,
   ShieldCheck,
   Sparkles
@@ -14,7 +15,8 @@ import {
   type ClassicAdviceResult,
   type FinancialSnapshot,
   type AdviceMetric,
-  type AdviceRecommendation
+  type AdviceRecommendation,
+  type SwissBridgeAdviceResult
 } from "@/lib/advice";
 import {
   PRODUCT_PLANS,
@@ -40,12 +42,14 @@ export function AdviceClient({
   baseCurrency,
   aiConfigured,
   classicAdvice,
+  swissBridgeAdvice,
   snapshot
 }: {
   tier: ProductTier;
   baseCurrency: string;
   aiConfigured: boolean;
   classicAdvice: ClassicAdviceResult | null;
+  swissBridgeAdvice: SwissBridgeAdviceResult | null;
   snapshot: FinancialSnapshot | null;
 }) {
   const [aiAdvice, setAiAdvice] = useState<AiAdviceResult | null>(null);
@@ -133,6 +137,37 @@ export function AdviceClient({
           <RecommendationList recommendations={classicAdvice.recommendations} />
           <div className="flex flex-wrap gap-2">
             {classicAdvice.assumptions.map((assumption) => (
+              <Badge key={assumption} variant="outline">
+                {assumption}
+              </Badge>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {swissBridgeAdvice && (
+        <section className="space-y-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <Landmark className="h-4 w-4" />
+              Swiss Bridge
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Three-tier unemployment bridge for Swiss-style payout timing and
+              staged liquidity.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+            {swissBridgeAdvice.tiers.map((tier) => (
+              <SwissBridgeTierCard
+                key={tier.id}
+                tier={tier}
+                currency={baseCurrency}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {swissBridgeAdvice.assumptions.map((assumption) => (
               <Badge key={assumption} variant="outline">
                 {assumption}
               </Badge>
@@ -312,6 +347,64 @@ function RecommendationList({
         </Card>
       ))}
     </div>
+  );
+}
+
+function SwissBridgeTierCard({
+  tier,
+  currency
+}: {
+  tier: SwissBridgeAdviceResult["tiers"][number];
+  currency: string;
+}) {
+  const fundedPct = Math.round(Number(tier.fundedRatio) * 100);
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">{tier.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tier.liquidityWindow}
+            </p>
+          </div>
+          <PriorityBadge priority={tier.priority} />
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">Target</span>
+            <span className="font-medium tabular">
+              {formatMoneyWithCurrency(tier.targetAmount, currency)}
+            </span>
+          </div>
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">Available</span>
+            <span className="font-medium tabular">
+              {formatMoneyWithCurrency(tier.availableAmount, currency)}
+            </span>
+          </div>
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">Gap</span>
+            <span className="font-medium tabular">
+              {formatMoneyWithCurrency(tier.gapAmount, currency)}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.min(100, fundedPct)}%` }}
+            />
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {fundedPct}% funded
+          </p>
+        </div>
+        <p className="text-sm text-muted-foreground">{tier.rationale}</p>
+        <p className="text-sm">{tier.action}</p>
+      </CardContent>
+    </Card>
   );
 }
 

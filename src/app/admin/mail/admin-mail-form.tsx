@@ -42,19 +42,22 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
     try {
       const payload: Record<string, unknown> = {
         provider: cfg.provider,
-        smtpHost: cfg.smtpHost ?? null,
+        smtpHost: cfg.smtpHost?.trim() || null,
         smtpPort: cfg.smtpPort ?? null,
         smtpTlsMode: cfg.smtpTlsMode ?? null,
-        smtpUser: cfg.smtpUser ?? null,
-        fromName: cfg.fromName ?? null,
-        fromEmail: cfg.fromEmail ?? null
+        smtpUser: cfg.smtpUser?.trim() || null,
+        fromName: cfg.fromName?.trim() || null,
+        fromEmail: cfg.fromEmail?.trim() || null
       };
       // Only include the password field if it was edited — sending undefined
       // leaves the sealed value untouched.
       if (newPassword.trim()) payload.smtpPassword = newPassword;
       const res = await fetch("/api/admin/config/mail", {
         method: "PATCH",
-        headers: { "content-type": "application/json" },
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json"
+        },
         body: JSON.stringify(payload)
       });
       const json = await readApiObject(res, "/api/admin/config/mail");
@@ -81,7 +84,10 @@ export function AdminMailForm({ initial }: { initial: MailConfig }) {
       }
       const res = await fetch("/api/admin/config/mail/test", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json"
+        },
         body: JSON.stringify({})
       });
       const json = await readApiObject(res, "/api/admin/config/mail/test");

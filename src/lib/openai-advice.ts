@@ -3,7 +3,8 @@ import {
   snapshotForAi,
   type AiAdviceResult,
   type ClassicAdviceResult,
-  type FinancialSnapshot
+  type FinancialSnapshot,
+  type SwissBridgeAdviceResult
 } from "./advice";
 
 const RESPONSE_SCHEMA = {
@@ -64,12 +65,14 @@ export async function generateOpenAiAdvice({
   apiKey,
   model,
   snapshot,
-  classicAdvice
+  classicAdvice,
+  swissBridgeAdvice
 }: {
   apiKey: string;
   model: string;
   snapshot: FinancialSnapshot;
   classicAdvice: ClassicAdviceResult;
+  swissBridgeAdvice: SwissBridgeAdviceResult;
 }): Promise<AiAdviceResult> {
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -84,13 +87,14 @@ export async function generateOpenAiAdvice({
         {
           role: "system",
           content:
-            "You are TL Finance AI, a careful household budget planning assistant. Give practical, jurisdiction-neutral planning guidance. Do not claim to be a regulated financial adviser. Preserve emergency-fund discipline before suggesting investment redeployment. Consider earners, temporary job loss, redistributable expenses, retirement, kid savings, FIRE planning, low-interest cash drag, debt, and healthy money habits. Unless a field explicitly carries its own currency, totals are in snapshot.baseCurrency. Account monthlyCost carries native amount/currency plus baseAmount. Accounts flagged retirement are long-term investment assets; accounts flagged kidsSavings are earmarked outside household wealth and emergency reserves. Return only JSON matching the schema."
+            "You are TL Finance AI, a careful household budget planning assistant. Give practical, jurisdiction-neutral planning guidance. Do not claim to be a regulated financial adviser. Preserve emergency-fund discipline before suggesting investment redeployment. Consider earners, temporary job loss, redistributable expenses, retirement, kid savings, FIRE planning, low-interest cash drag, debt, Swiss Bridge unemployment tiers, and healthy money habits. Unless a field explicitly carries its own currency, totals are in snapshot.baseCurrency. Account monthlyCost carries native amount/currency plus baseAmount. Accounts flagged retirement are long-term investment assets; accounts flagged kidsSavings are earmarked outside household wealth and emergency reserves. Return only JSON matching the schema."
         },
         {
           role: "user",
           content: JSON.stringify({
             snapshot: snapshotForAi(snapshot),
             classicAdvice,
+            swissBridgeAdvice,
             instruction:
               "Prioritize concrete recommendations that improve allocation without weakening short-term resilience."
           })

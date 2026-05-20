@@ -286,16 +286,27 @@ export const adminAuthConfigPatchSchema = z.object({
   maxEmailVerificationRequestsPerHour: z.number().int().min(1).max(1000).optional()
 });
 
+const nullableTrimmedString = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === "" ? null : value,
+  z.string().trim().optional().nullable()
+);
+const nullableEmailField = z.preprocess(
+  (value) =>
+    typeof value === "string" && value.trim() === "" ? null : value,
+  emailField.optional().nullable()
+);
+
 export const adminMailConfigPatchSchema = z.object({
   provider: z.enum(["smtp", "none"]).optional(),
-  smtpHost: z.string().trim().optional().nullable(),
+  smtpHost: nullableTrimmedString,
   smtpPort: z.number().int().min(1).max(65535).optional().nullable(),
   smtpTlsMode: z.enum(["auto", "ssl", "starttls", "none"]).optional().nullable(),
-  smtpUser: z.string().trim().optional().nullable(),
+  smtpUser: nullableTrimmedString,
   // null clears the stored password; undefined leaves it untouched.
   smtpPassword: z.string().optional().nullable(),
-  fromName: z.string().trim().optional().nullable(),
-  fromEmail: emailField.optional().nullable()
+  fromName: nullableTrimmedString,
+  fromEmail: nullableEmailField
 });
 
 export const adminMailTestSchema = z.object({
