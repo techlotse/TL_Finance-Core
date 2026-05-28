@@ -21,6 +21,7 @@ Applied migrations:
 | `20260502100000_product_tiers_and_ai_config` | Product tier and AI provider configuration |
 | `20260513210000_payment_config` | Admin payment-link configuration |
 | `20260519120000_account_planning_flags` | Retirement/Pillar 3a and kids-savings account flags |
+| `20260528120000_statement_ingestion` | Statement import ledger, normalized actual transactions, category rules, and transfer matches |
 
 Schema highlights:
 
@@ -34,6 +35,10 @@ Schema highlights:
 | `ScheduledTransfer` | Account-to-account movement with recurrence |
 | `Asset` | Tangible assets with signed annual appreciation rate |
 | `BalanceSnapshot` | Periodic actual-balance reading per `BankAccountCurrency`; latest mirrors onto `currentBalance` |
+| `StatementImport` | Idempotent statement parser run for one uploaded file or text payload |
+| `ActualTransaction` | Normalized transaction ledger row with signed Decimal amount, raw row JSON, review state, and dedupe hash |
+| `TransactionCategoryRule` | Household-scoped deterministic category rule for actual transactions |
+| `TransactionTransferMatch` | Household-scoped match between debit and credit transaction rows for internal transfers |
 | `AuditLog` | Append-only operational trail |
 | `AdminConfig` | Singleton JSON config with auth, mail, AI, payment, backup, and observability config; secrets are sealed |
 | `EmailVerificationToken` / `PasswordResetToken` | SHA-256 hashed, single-use, expiry-bounded |

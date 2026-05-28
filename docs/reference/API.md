@@ -22,6 +22,7 @@ Endpoint groups:
 | Budget | `/api/budget-items`, `/api/categories`, `/api/category-groups/[id]`, `/api/income-earners` |
 | Accounts | `/api/accounts`, `/api/accounts/[id]`, `/api/accounts/[id]/snapshots`, `/projection`, `/debt-projection` |
 | Transfers | `/api/transfers`, `/api/transfers/[id]` |
+| Financial analysis | `POST /api/statement-imports/preview`, `GET/POST /api/statement-imports`, `GET /api/transactions`, `PATCH /api/transactions/[id]` |
 | Assets | `/api/assets`, `/api/assets/[id]` |
 | Forecast | `/api/forecast`, `/api/forecast/account/[id]`, `/api/dashboard/summary` |
 | Investments | `/api/investment-projections`, `/api/investment-projections/[id]`, `/result` |
@@ -112,6 +113,24 @@ User access administration routes:
   grant paid-plan access manually, and audits the before/after access state.
   It does not mutate roles and refuses to leave the instance without an active
   admin account.
+
+Statement import routes:
+
+- `POST /api/statement-imports/preview` accepts multipart form data with a
+  `file` field or JSON `{ content, fileName?, mimeType?, parserKey?,
+  accountId?, defaultCurrency? }`. It parses the statement, returns row counts,
+  warnings, and up to 50 sample rows, and does not commit transactions.
+- `POST /api/statement-imports` accepts the same payload and commits normalized
+  rows idempotently by content hash and row dedupe hash. If `accountId` is
+  supplied, the account must belong to the active household and contain pockets
+  for every imported row currency.
+- `GET /api/statement-imports` returns the latest 100 imports for the active
+  household.
+- `GET /api/transactions` lists normalized actual transactions for the active
+  household. Filters: `account`, `category`, `reviewState`, `start`, `end`,
+  and `take` up to 250.
+- `PATCH /api/transactions/[id]` updates review state, category, or notes after
+  tenant-scoped lookup. Category IDs are ownership-checked before writing.
 
 Authentication hardening:
 

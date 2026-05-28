@@ -9,6 +9,19 @@ plus a generic preset, with German/French stubs.
 Read this file first every session, then the relevant `docs/**/*.md`
 before touching anything load-bearing.
 
+Current checkout note: this repository is now at v0.7.9 in `package.json`,
+`README.md`, and the public docs. Treat the v0.5.0 section below as historical
+handoff context. For the budgeting / financial-analysis / advice split and
+bank-statement ingestion work, read
+`docs/strategy/PRODUCT_SPLIT_AND_STATEMENT_INGESTION.md` before changing code.
+
+If Codex has prepared the `codex/product-split-foundation` branch, start from
+that branch or a merge of it. Treat `src/lib/statements/types.ts` as the parser
+contract. Your first statement-ingestion turn should focus on sanitized
+UBS/Revolut/FNB fixture specifications, parser acceptance criteria, and
+categorization/advice heuristics. Do not redesign the statement schema or API
+surface unless fixture evidence proves the foundation is wrong.
+
 ---
 
 ## Current status — v0.5.0 public-handoff baseline

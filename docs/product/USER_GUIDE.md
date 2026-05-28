@@ -12,7 +12,7 @@ the signed-in user's memberships:
 
 ```text
 Onboarding -> Dashboard
-Dashboard -> Accounts, Budget, Transfers, Assets, Debt, Forecast, Investments
+Dashboard -> Accounts, Budget, Transfers, Analysis, Assets, Debt, Forecast, Investments
 Settings -> Household, earners, categories, preferences, billing, backup/import-export
 Admin -> Auth, users, mail, AI, payments, backups, observability, audit log
 ```
@@ -55,6 +55,8 @@ Core workflows:
     the instance operator enables public-alpha payments.
 12. Export household JSON in Settings before destructive import or major
     changes.
+13. Use statement-import preview APIs to validate bank files before committing
+    actual transactions to the analysis ledger.
 
 Savings and investment planning:
 
@@ -80,6 +82,18 @@ Savings and investment planning:
   two months of immediate cash, one year of three-month notice cover, and two
   years of longer notice cover. Retirement and Kids saving balances are
   excluded from these bridge targets.
+
+Statement analysis:
+
+- Structured imports should go through preview first. Preview returns detected
+  parser, row counts, row warnings, and sample rows without writing actual
+  transactions.
+- Committed actual transactions are idempotent by file content and row dedupe
+  hash, so re-importing the same file should not duplicate spending.
+- Unknown or ambiguous rows remain in review state until categorized or matched
+  as internal transfers.
+- Budget planning remains usable without accounts; statement analysis can link
+  imports to accounts when the user wants account-level actuals.
 
 Admin workflows:
 
