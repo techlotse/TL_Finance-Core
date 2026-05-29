@@ -1,0 +1,179 @@
+{
+  "meta": {
+    "provenance": "synthetic",
+    "spec": "docs/strategy/parsers/FNB_CSV.md",
+    "covers": "FNB ZAR cheque, May 2026: salary, debit orders, card, ATM (no fee), SARS, savings transfer, refund, electricity"
+  },
+  "detection": {
+    "matched": true,
+    "minConfidence": 0.96,
+    "reasonContains": "FNB record-1 header"
+  },
+  "balances": {
+    "opening": "18450.0000",
+    "closing": "19178.3200",
+    "currency": "ZAR"
+  },
+  "statement": {
+    "parserKey": "fnb-csv",
+    "parserVersion": "0.1.0",
+    "institution": "fnb",
+    "accountName": "MR S RUAN",
+    "accountIdentifier": "62812345678",
+    "rows": [
+      {
+        "bookingDate": "2026-05-01",
+        "valueDate": null,
+        "amount": "35000.0000",
+        "currency": "ZAR",
+        "description": "Salary · TechLotse · Salary May 2026",
+        "counterparty": null,
+        "reference": "1001",
+        "balanceAfter": "53450.0000",
+        "normalizedMerchantKey": "salary techlotse salary may"
+      },
+      {
+        "bookingDate": "2026-05-02",
+        "valueDate": null,
+        "amount": "-4250.0000",
+        "currency": "ZAR",
+        "description": "Debit Order · Discovery Health · Medical aid 2026/05",
+        "counterparty": null,
+        "reference": "1002",
+        "balanceAfter": "49200.0000",
+        "normalizedMerchantKey": "debit order discovery health medical aid"
+      },
+      {
+        "bookingDate": "2026-05-02",
+        "valueDate": null,
+        "amount": "-12300.0000",
+        "currency": "ZAR",
+        "description": "Debit Order · Standard Bank · Bond 2026/05",
+        "counterparty": null,
+        "reference": "1003",
+        "balanceAfter": "36900.0000",
+        "normalizedMerchantKey": "debit order standard bank bond"
+      },
+      {
+        "bookingDate": "2026-05-03",
+        "valueDate": null,
+        "amount": "-1450.0000",
+        "currency": "ZAR",
+        "description": "Debit Order · Outsurance · Vehicle insurance",
+        "counterparty": null,
+        "reference": "1004",
+        "balanceAfter": "35450.0000",
+        "normalizedMerchantKey": "debit order outsurance vehicle insurance"
+      },
+      {
+        "bookingDate": "2026-05-05",
+        "valueDate": null,
+        "amount": "-1245.5000",
+        "currency": "ZAR",
+        "description": "Card Purchase · Checkers Sandton",
+        "counterparty": null,
+        "reference": "1005",
+        "balanceAfter": "34204.5000",
+        "normalizedMerchantKey": "card purchase checkers sandton"
+      },
+      {
+        "bookingDate": "2026-05-08",
+        "valueDate": null,
+        "amount": "-950.0000",
+        "currency": "ZAR",
+        "description": "Card Purchase · Engen Fourways · Fuel",
+        "counterparty": null,
+        "reference": "1006",
+        "balanceAfter": "33254.5000",
+        "normalizedMerchantKey": "card purchase engen fourways fuel"
+      },
+      {
+        "bookingDate": "2026-05-12",
+        "valueDate": null,
+        "amount": "-2000.0000",
+        "currency": "ZAR",
+        "description": "ATM Withdrawal · FNB ATM Rosebank",
+        "counterparty": null,
+        "reference": "1007",
+        "balanceAfter": "31254.5000",
+        "normalizedMerchantKey": "atm withdrawal fnb atm rosebank"
+      },
+      {
+        "bookingDate": "2026-05-15",
+        "valueDate": null,
+        "amount": "-8500.0000",
+        "currency": "ZAR",
+        "description": "EFT Payment · SARS · IT12 2025 tax assessment",
+        "counterparty": null,
+        "reference": "1008",
+        "balanceAfter": "22754.5000",
+        "normalizedMerchantKey": "eft payment sars it tax assessment"
+      },
+      {
+        "bookingDate": "2026-05-18",
+        "valueDate": null,
+        "amount": "-3000.0000",
+        "currency": "ZAR",
+        "description": "Transfer to Savings Pocket",
+        "counterparty": null,
+        "reference": "1009",
+        "balanceAfter": "19754.5000",
+        "normalizedMerchantKey": "transfer to savings pocket"
+      },
+      {
+        "bookingDate": "2026-05-20",
+        "valueDate": null,
+        "amount": "-585.1800",
+        "currency": "ZAR",
+        "description": "Card Purchase · Pick n Pay Sandton",
+        "counterparty": null,
+        "reference": "1010",
+        "balanceAfter": "19169.3200",
+        "normalizedMerchantKey": "card purchase pick n pay sandton"
+      },
+      {
+        "bookingDate": "2026-05-25",
+        "valueDate": null,
+        "amount": "25.0000",
+        "currency": "ZAR",
+        "description": "Credit · MTN Refund · Airtime reversal",
+        "counterparty": null,
+        "reference": "1011",
+        "balanceAfter": "19194.3200",
+        "normalizedMerchantKey": "credit mtn refund airtime reversal"
+      },
+      {
+        "bookingDate": "2026-05-29",
+        "valueDate": null,
+        "amount": "-16.0000",
+        "currency": "ZAR",
+        "description": "Card Purchase · Eskom · Prepaid electricity",
+        "counterparty": null,
+        "reference": "1012",
+        "balanceAfter": "19178.3200",
+        "normalizedMerchantKey": "card purchase eskom prepaid electricity"
+      }
+    ],
+    "warnings": []
+  },
+  "rawFieldChecks": {
+    "row0": {
+      "recordType": "5",
+      "accountNumber": "62812345678",
+      "postingDate": "2026/05/01",
+      "txnNumber": "1001",
+      "description1": "Salary",
+      "description2": "TechLotse",
+      "description3": "Salary May 2026",
+      "amount": "35000.00",
+      "balance": "53450.00",
+      "accruedBankCharges": "0.00"
+    }
+  },
+  "notes": [
+    "normalizedMerchantKey strips digit runs of >=2; 'IT12' becomes 'it', '2025' is dropped. Codex: verify exact normalize.ts output by feeding through normalizeMerchantKey at test time.",
+    "Row 8 (SARS) has '2025' stripped → 'eft payment sars it tax assessment'. If undesired, categorization rules use 'contains' on the unstripped description (rules match against description, not merchantKey).",
+    "Account header sets defaultCurrency=ZAR — rows do not carry a per-row currency column, so the parser MUST inherit the header value for every row's currency field.",
+    "Statement period from record-3 (2026/05/01–2026/05/31) is captured in metadata.statementPeriod but not asserted here; Codex may add to NormalizedStatement if useful for downstream UX."
+  ]
+}

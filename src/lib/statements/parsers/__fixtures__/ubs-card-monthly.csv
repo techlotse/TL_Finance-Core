@@ -1,0 +1,21 @@
+# PROVENANCE: synthetic
+# SOURCE-SPEC: UBS e-banking Kartentransaktionen export (publicly described shape)
+# COVERS: UBS Mastercard CHF settlement, May 2026; Migros/Sunrise/Coop/SBB/Booking/Amazon/refund/annual fee, plus invalid_date/invalid_amount/missing_description warnings
+# NORMALIZED-BY: docs/strategy/parsers/UBS_CARD_CSV.md
+Karte: 4571 **** **** 2851
+Karteninhaber: MAX MUSTERMANN
+Abrechnungswaehrung: CHF
+Periode: 01.05.2026 - 31.05.2026
+
+Buchungsdatum;Belastungsdatum;Branche;Belastung;Gutschrift;Originalbetrag;Originalwährung;Kurs
+05.05.2026;06.05.2026;MIGROS GMM HIRSCHENGRABEN ZURICH;34.85;;;;
+07.05.2026;08.05.2026;SUNRISE GMBH ZUERICH;79.00;;;;
+11.05.2026;12.05.2026;BOOKING.COM AMSTERDAM;124.30;;130.00;EUR;0.9562
+14.05.2026;15.05.2026;COOP-2435 BERN BAHNHOF;18.20;;;;
+17.05.2026;18.05.2026;SBB AUTOMATIC TICKET;12.40;;;;
+19.05.2026;20.05.2026;AMAZON EU SARL LUXEMBOURG;23.45;;25.00;EUR;0.9380
+22.05.2026;23.05.2026;BOOKING.COM REFUND;;124.30;130.00;EUR;0.9562
+28.05.2026;29.05.2026;JAHRESGEBUEHR MASTERCARD;100.00;;;;
+31.04.2026;31.04.2026;INVALID DATE ROW;5.00;;;;
+26.05.2026;27.05.2026;BOTH COLUMNS POPULATED;10.00;10.00;;;
+27.05.2026;28.05.2026;;7.50;;;;

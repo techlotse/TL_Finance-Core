@@ -1,0 +1,19 @@
+# PROVENANCE: synthetic
+# SOURCE-SPEC: FNB Online Banking CSV Statement File Specification (online.fnb.co.za)
+# COVERS: ZAR cheque account, May 2026; salary, debit orders (medical aid, bond, insurance), groceries, fuel, ATM, SARS, savings transfer, refund, electricity
+# NORMALIZED-BY: docs/strategy/parsers/FNB_CSV.md
+1,62812345678,MR S RUAN,ZAR,Cheque,250655,18450.00,19178.32
+3,2026/06/01,2026/05/01,2026/05/31
+5,62812345678,2026/05/01,1001,Salary,TechLotse,Salary May 2026,35000.00,53450.00,0.00
+5,62812345678,2026/05/02,1002,Debit Order,Discovery Health,Medical aid 2026/05,-4250.00,49200.00,0.00
+5,62812345678,2026/05/02,1003,Debit Order,Standard Bank,Bond 2026/05,-12300.00,36900.00,0.00
+5,62812345678,2026/05/03,1004,Debit Order,Outsurance,Vehicle insurance,-1450.00,35450.00,0.00
+5,62812345678,2026/05/05,1005,Card Purchase,Checkers Sandton,,-1245.50,34204.50,0.00
+5,62812345678,2026/05/08,1006,Card Purchase,Engen Fourways,Fuel,-950.00,33254.50,0.00
+5,62812345678,2026/05/12,1007,ATM Withdrawal,FNB ATM Rosebank,,-2000.00,31254.50,0.00
+5,62812345678,2026/05/15,1008,EFT Payment,SARS,IT12 2025 tax assessment,-8500.00,22754.50,0.00
+5,62812345678,2026/05/18,1009,Transfer to Savings Pocket,,,-3000.00,19754.50,0.00
+5,62812345678,2026/05/20,1010,Card Purchase,Pick n Pay Sandton,,-585.18,19169.32,0.00
+5,62812345678,2026/05/25,1011,Credit,MTN Refund,Airtime reversal,25.00,19194.32,0.00
+5,62812345678,2026/05/29,1012,Card Purchase,Eskom,Prepaid electricity,-16.00,19178.32,0.00
+6,2026/05/31,18450.00,19178.32

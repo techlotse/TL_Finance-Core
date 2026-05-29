@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+PROVENANCE: synthetic
+SOURCE-SPEC: ISO 20022 camt.053.001.08 + UBS Swiss CGI conventions
+COVERS: single-Stmt CHF current account, May 2026; salary, rent ISR, card, FX leg, Pillar 3a, refund, SBB, Krankenkasse; plus skip-warning rows for pending, missing CdtDbtInd, invalid date
+NORMALIZED-BY: docs/strategy/parsers/UBS_CAMT053.md
+-->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <BkToCstmrStmt>
+    <GrpHdr>
+      <MsgId>UBS-MSG-20260601-0001</MsgId>
+      <CreDtTm>2026-06-01T03:15:00</CreDtTm>
+    </GrpHdr>
+    <Stmt>
+      <Id>STMT-2026-05</Id>
+      <ElctrncSeqNb>5</ElctrncSeqNb>
+      <CreDtTm>2026-06-01T03:15:00</CreDtTm>
+      <FrToDt>
+        <FrDtTm>2026-05-01T00:00:00</FrDtTm>
+        <ToDtTm>2026-05-31T23:59:59</ToDtTm>
+      </FrToDt>
+      <Acct>
+        <Id><IBAN>CH9300762011623852957</IBAN></Id>
+        <Ccy>CHF</Ccy>
+        <Svcr>
+          <FinInstnId>
+            <BIC>UBSWCHZH80A</BIC>
+            <Nm>UBS Switzerland AG</Nm>
+          </FinInstnId>
+        </Svcr>
+      </Acct>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="CHF">7500.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>2026-05-01</Dt></Dt>
+      </Bal>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="CHF">9591.05</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>2026-05-31</Dt></Dt>
+      </Bal>
+
+      <!-- Row 1: salary -->
+      <Ntry>
+        <NtryRef>NTRY-1</NtryRef>
+        <Amt Ccy="CHF">5000.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-01</Dt></BookgDt>
+        <ValDt><Dt>2026-05-01</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>SALA</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>SAL-202605</EndToEndId></Refs>
+          <Amt Ccy="CHF">5000.00</Amt>
+          <CdtDbtInd>CRDT</CdtDbtInd>
+          <RltdPties><Dbtr><Nm>TechLotse AG</Nm></Dbtr></RltdPties>
+          <RmtInf><Ustrd>Salary May 2026</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 2: rent, structured ISR remittance -->
+      <Ntry>
+        <NtryRef>NTRY-2</NtryRef>
+        <Amt Ccy="CHF">2200.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-02</Dt></BookgDt>
+        <ValDt><Dt>2026-05-02</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>ICDT</Cd><SubFmlyCd>ESCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>RENT-202605</EndToEndId></Refs>
+          <Amt Ccy="CHF">2200.00</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RltdPties><Cdtr><Nm>Hausverwaltung Bern AG</Nm></Cdtr></RltdPties>
+          <RmtInf>
+            <Strd>
+              <CdtrRefInf>
+                <Tp><CdOrPrtry><Prtry>SCOR</Prtry></CdOrPrtry></Tp>
+                <Ref>210000000003139471430009017</Ref>
+              </CdtrRefInf>
+            </Strd>
+            <Ustrd>Miete Mai 2026 Wohnung 3.5</Ustrd>
+          </RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 3: Coop card, no FX -->
+      <Ntry>
+        <NtryRef>NTRY-3</NtryRef>
+        <Amt Ccy="CHF">87.40</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-05</Dt></BookgDt>
+        <ValDt><Dt>2026-05-05</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>CCRD</Cd><SubFmlyCd>POSD</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><AcctSvcrRef>UBSACQ-3</AcctSvcrRef></Refs>
+          <Amt Ccy="CHF">87.40</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <AmtDtls>
+            <InstdAmt><Amt Ccy="CHF">87.40</Amt></InstdAmt>
+            <TxAmt><Amt Ccy="CHF">87.40</Amt></TxAmt>
+          </AmtDtls>
+          <RltdPties><Cdtr><Nm>Coop</Nm></Cdtr></RltdPties>
+          <RmtInf><Ustrd>COOP-2435 BERN BAHNHOF</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 4: Amazon EU, EUR -> CHF FX leg -->
+      <Ntry>
+        <NtryRef>NTRY-4</NtryRef>
+        <Amt Ccy="CHF">23.45</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-10</Dt></BookgDt>
+        <ValDt><Dt>2026-05-11</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>CCRD</Cd><SubFmlyCd>POSD</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>AMZN-XF-4</EndToEndId></Refs>
+          <Amt Ccy="CHF">23.45</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <AmtDtls>
+            <InstdAmt><Amt Ccy="EUR">25.00</Amt></InstdAmt>
+            <TxAmt><Amt Ccy="CHF">23.45</Amt></TxAmt>
+            <CcyXchg>
+              <SrcCcy>EUR</SrcCcy>
+              <TrgtCcy>CHF</TrgtCcy>
+              <XchgRate>0.9380</XchgRate>
+            </CcyXchg>
+          </AmtDtls>
+          <RltdPties><Cdtr><Nm>Amazon EU</Nm></Cdtr></RltdPties>
+          <RmtInf><Ustrd>AMAZON EU LUXEMBOURG</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 5: Pillar 3a (VIAC) -->
+      <Ntry>
+        <NtryRef>NTRY-5</NtryRef>
+        <Amt Ccy="CHF">150.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-15</Dt></BookgDt>
+        <ValDt><Dt>2026-05-15</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>ICDT</Cd><SubFmlyCd>SALA</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>3A-VIAC-202605</EndToEndId></Refs>
+          <Amt Ccy="CHF">150.00</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RltdPties><Cdtr><Nm>VIAC</Nm></Cdtr></RltdPties>
+          <RmtInf><Ustrd>Saeule 3a Einzahlung Mai 2026</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 6: refund from Coop -->
+      <Ntry>
+        <NtryRef>NTRY-6</NtryRef>
+        <Amt Ccy="CHF">12.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-18</Dt></BookgDt>
+        <ValDt><Dt>2026-05-18</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>CCRD</Cd><SubFmlyCd>POSD</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>COOP-REF-6</EndToEndId></Refs>
+          <Amt Ccy="CHF">12.00</Amt>
+          <CdtDbtInd>CRDT</CdtDbtInd>
+          <RltdPties><Dbtr><Nm>Coop</Nm></Dbtr></RltdPties>
+          <RmtInf><Ustrd>COOP-2435 RETURN</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 7: SBB card (counterparty only in Ustrd) -->
+      <Ntry>
+        <NtryRef>NTRY-7</NtryRef>
+        <Amt Ccy="CHF">31.50</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-20</Dt></BookgDt>
+        <ValDt><Dt>2026-05-20</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>CCRD</Cd><SubFmlyCd>POSD</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><AcctSvcrRef>UBSACQ-7</AcctSvcrRef></Refs>
+          <Amt Ccy="CHF">31.50</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RmtInf><Ustrd>SBB CFF FFS BERN HB</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Row 8: Helsana Krankenkasse, structured ref -->
+      <Ntry>
+        <NtryRef>NTRY-8</NtryRef>
+        <Amt Ccy="CHF">428.60</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-25</Dt></BookgDt>
+        <ValDt><Dt>2026-05-26</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>ICDT</Cd><SubFmlyCd>ESCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls><TxDtls>
+          <Refs><EndToEndId>HELS-202605</EndToEndId></Refs>
+          <Amt Ccy="CHF">428.60</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RltdPties><Cdtr><Nm>Helsana Versicherungen AG</Nm></Cdtr></RltdPties>
+          <RmtInf>
+            <Strd>
+              <CdtrRefInf>
+                <Tp><CdOrPrtry><Prtry>SCOR</Prtry></CdOrPrtry></Tp>
+                <Ref>RF8420180000000000000000089</Ref>
+              </CdtrRefInf>
+            </Strd>
+            <Ustrd>Praemie Grundversicherung Mai 2026</Ustrd>
+          </RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Negative case P1: pending row, must be skipped -->
+      <Ntry>
+        <NtryRef>NTRY-P1</NtryRef>
+        <Amt Ccy="CHF">15.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>PDNG</Cd></Sts>
+        <BookgDt><Dt>2026-05-31</Dt></BookgDt>
+        <ValDt><Dt>2026-05-31</Dt></ValDt>
+        <NtryDtls><TxDtls>
+          <Refs><AcctSvcrRef>UBSACQ-P1</AcctSvcrRef></Refs>
+          <Amt Ccy="CHF">15.00</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RmtInf><Ustrd>PENDING TWINT</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Negative case F1: missing CdtDbtInd -->
+      <Ntry>
+        <NtryRef>NTRY-F1</NtryRef>
+        <Amt Ccy="CHF">9.99</Amt>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-05-31</Dt></BookgDt>
+        <NtryDtls><TxDtls>
+          <Amt Ccy="CHF">9.99</Amt>
+          <RmtInf><Ustrd>MALFORMED ENTRY</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+
+      <!-- Negative case D1: invalid booking date -->
+      <Ntry>
+        <NtryRef>NTRY-D1</NtryRef>
+        <Amt Ccy="CHF">42.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts><Cd>BOOK</Cd></Sts>
+        <BookgDt><Dt>2026-13-40</Dt></BookgDt>
+        <NtryDtls><TxDtls>
+          <Amt Ccy="CHF">42.00</Amt>
+          <CdtDbtInd>DBIT</CdtDbtInd>
+          <RmtInf><Ustrd>BAD DATE</Ustrd></RmtInf>
+        </TxDtls></NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>
