@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "provenance": "synthetic",
+    "spec": "docs/strategy/parsers/REVOLUT_CSV.md",
+    "covers": "Revolut EUR wallet May 2026 with fee splits, FX leg, pending/failed/reverted warnings"
+  },
+  "detection": {
+    "matched": true,
+    "minConfidence": 0.97,
+    "reasonContains": "Revolut header"
+  },
+  "balances": {
+    "opening": "0.0000",
+    "closing": "237.7100",
+    "currency": "EUR"
+  },
+  "statement": {
+    "parserKey": "revolut-csv",
+    "parserVersion": "0.1.0",
+    "institution": "revolut",
+    "accountName": null,
+    "accountIdentifier": null,
+    "rows": [
+      {
+        "bookingDate": "2026-05-01",
+        "valueDate": "2026-05-01",
+        "amount": "500.0000",
+        "currency": "EUR",
+        "description": "Apple Pay top-up",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "500.0000",
+        "normalizedMerchantKey": "apple pay top up"
+      },
+      {
+        "bookingDate": "2026-05-03",
+        "valueDate": "2026-05-03",
+        "amount": "-42.5000",
+        "currency": "EUR",
+        "description": "Lidl Berlin",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "457.5000",
+        "normalizedMerchantKey": "lidl berlin"
+      },
+      {
+        "bookingDate": "2026-05-04",
+        "valueDate": "2026-05-04",
+        "amount": "-100.0000",
+        "currency": "EUR",
+        "description": "Exchanged to CHF",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "357.5000",
+        "normalizedMerchantKey": "exchanged to chf"
+      },
+      {
+        "bookingDate": "2026-05-06",
+        "valueDate": "2026-05-06",
+        "amount": "-50.0000",
+        "currency": "EUR",
+        "description": "Sent to John Doe",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "307.0000",
+        "normalizedMerchantKey": "sent to john doe"
+      },
+      {
+        "bookingDate": "2026-05-06",
+        "valueDate": "2026-05-06",
+        "amount": "-0.5000",
+        "currency": "EUR",
+        "description": "Sent to John Doe — Fee",
+        "counterparty": null,
+        "reference": ":fee",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "sent to john doe fee"
+      },
+      {
+        "bookingDate": "2026-05-09",
+        "valueDate": "2026-05-08",
+        "amount": "-15.9900",
+        "currency": "EUR",
+        "description": "Netflix.com",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "291.0100",
+        "normalizedMerchantKey": "netflix com"
+      },
+      {
+        "bookingDate": "2026-05-10",
+        "valueDate": "2026-05-10",
+        "amount": "42.5000",
+        "currency": "EUR",
+        "description": "Lidl Berlin",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "333.5100",
+        "normalizedMerchantKey": "lidl berlin"
+      },
+      {
+        "bookingDate": "2026-05-12",
+        "valueDate": "2026-05-12",
+        "amount": "-100.0000",
+        "currency": "EUR",
+        "description": "ATM Berlin Hbf",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "231.5100",
+        "normalizedMerchantKey": "atm berlin hbf"
+      },
+      {
+        "bookingDate": "2026-05-12",
+        "valueDate": "2026-05-12",
+        "amount": "-2.0000",
+        "currency": "EUR",
+        "description": "ATM Berlin Hbf — Fee",
+        "counterparty": null,
+        "reference": ":fee",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "atm berlin hbf fee"
+      },
+      {
+        "bookingDate": "2026-05-25",
+        "valueDate": "2026-05-25",
+        "amount": "5.0000",
+        "currency": "EUR",
+        "description": "Stays referral cashback",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "236.5100",
+        "normalizedMerchantKey": "stays referral cashback"
+      },
+      {
+        "bookingDate": "2026-05-31",
+        "valueDate": "2026-05-31",
+        "amount": "1.2000",
+        "currency": "EUR",
+        "description": "Savings interest",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": "237.7100",
+        "normalizedMerchantKey": "savings interest"
+      }
+    ],
+    "warnings": [
+      { "code": "fee_split", "message": "Fee column split into sibling rows at file row(s) 5, 8" },
+      { "code": "pending_row", "field": "state", "message": "Row 9 skipped because state is PENDING", "rowNumber": 9 },
+      { "code": "failed_row", "field": "state", "message": "Row 10 skipped because state is DECLINED", "rowNumber": 10 },
+      { "code": "reversed_row", "field": "state", "message": "Row 11 skipped because state is REVERTED", "rowNumber": 11 }
+    ]
+  },
+  "rawFieldChecks": {
+    "row0": {
+      "Type": "TOPUP",
+      "Product": "Current",
+      "Started Date": "2026-05-01 09:00:00",
+      "Completed Date": "2026-05-01 09:00:05",
+      "Description": "Apple Pay top-up",
+      "Amount": "500.00",
+      "Fee": "0.00",
+      "Currency": "EUR",
+      "State": "COMPLETED",
+      "Balance": "500.00"
+    },
+    "row2": {
+      "Type": "EXCHANGE",
+      "Description": "Exchanged to CHF",
+      "Amount": "-100.00"
+    }
+  },
+  "notes": [
+    "Row 5 (Netflix) has bookingDate 2026-05-09 (Completed Date) and valueDate 2026-05-08 (Started Date). The 8→9 overnight settlement is intentional to verify the spec rule that bookingDate prefers Completed Date.",
+    "Fee-split row reference is ':fee' as a suffix-only marker since the main row carries no reference. If the main row had a reference R, the fee row's reference would be 'R:fee'. Codex: make this explicit in implementation.",
+    "Warning rowNumbers (9/10/11) are 1-based over data rows (excluding the column header). The fee_split warning uses file-row references (5, 8) for the source rows that triggered the split — i.e. the original TRANSFER (data row 4) and ATM (data row 7). Codex: pick whichever numbering matches generic-csv-test convention and align all three parsers."
+  ]
+}

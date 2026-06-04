@@ -9,6 +9,12 @@ plus a generic preset, with German/French stubs.
 Read this file first every session, then the relevant `docs/**/*.md`
 before touching anything load-bearing.
 
+Current checkout note: this repository is now at v0.7.9 in `package.json`,
+`README.md`, and the public docs. Treat the v0.5.0 section below as historical
+handoff context. For the budgeting / financial-analysis / advice split and
+bank-statement ingestion work, read
+`docs/strategy/PRODUCT_SPLIT_AND_STATEMENT_INGESTION.md` before changing code.
+
 ---
 
 ## Current status — v0.5.0 public-handoff baseline

@@ -67,6 +67,23 @@ export const contributionFrequencyEnum = z.enum([
 
 export const productTierEnum = z.enum(["core", "smart", "ai"]);
 
+export const statementInstitutionEnum = z.enum([
+  "ubs",
+  "revolut",
+  "fnb",
+  "standardbank",
+  "investec",
+  "generic",
+  "unknown"
+]);
+
+export const transactionReviewStateEnum = z.enum([
+  "needs_review",
+  "auto_categorized",
+  "confirmed",
+  "ignored"
+]);
+
 // ---- Household ----
 export const householdPatchSchema = z.object({
   name: z.string().trim().min(1).optional(),
@@ -227,6 +244,30 @@ export const investmentProjectionCreateSchema = z.object({
 });
 export const investmentProjectionPatchSchema =
   investmentProjectionCreateSchema.partial();
+
+// ---- Statement imports and actual transactions ----
+export const statementImportJsonSchema = z.object({
+  fileName: z.string().trim().max(255).optional().nullable(),
+  mimeType: z.string().trim().max(255).optional().nullable(),
+  content: z.string().min(1),
+  parserKey: z.string().trim().max(80).optional().nullable(),
+  accountId: z.string().min(1).optional().nullable(),
+  defaultCurrency: currencyCode.optional().nullable()
+});
+
+export const transactionPatchSchema = z
+  .object({
+    categoryId: z.string().min(1).nullable().optional(),
+    reviewState: transactionReviewStateEnum.optional(),
+    notes: z.string().max(500).nullable().optional()
+  })
+  .refine(
+    (body) =>
+      body.categoryId !== undefined ||
+      body.reviewState !== undefined ||
+      body.notes !== undefined,
+    { message: "At least one transaction field is required" }
+  );
 
 // ---- Auth ----
 export const emailField = z

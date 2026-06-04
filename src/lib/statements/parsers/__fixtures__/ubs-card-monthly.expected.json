@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "provenance": "synthetic",
+    "spec": "docs/strategy/parsers/UBS_CARD_CSV.md",
+    "covers": "UBS Mastercard CHF, May 2026, with FX rows + refund + warnings"
+  },
+  "detection": {
+    "matched": true,
+    "minConfidence": 0.96,
+    "reasonContains": "UBS card CSV"
+  },
+  "balances": null,
+  "statement": {
+    "parserKey": "ubs-card-csv",
+    "parserVersion": "0.1.0",
+    "institution": "ubs",
+    "accountName": "MAX MUSTERMANN",
+    "accountIdentifier": "4571 **** **** 2851",
+    "rows": [
+      {
+        "bookingDate": "2026-05-05",
+        "valueDate": "2026-05-06",
+        "amount": "-34.8500",
+        "currency": "CHF",
+        "description": "MIGROS GMM HIRSCHENGRABEN ZURICH",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "migros gmm hirschengraben zurich"
+      },
+      {
+        "bookingDate": "2026-05-07",
+        "valueDate": "2026-05-08",
+        "amount": "-79.0000",
+        "currency": "CHF",
+        "description": "SUNRISE GMBH ZUERICH",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "sunrise gmbh zuerich"
+      },
+      {
+        "bookingDate": "2026-05-11",
+        "valueDate": "2026-05-12",
+        "amount": "-124.3000",
+        "currency": "CHF",
+        "description": "BOOKING.COM AMSTERDAM",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "booking com amsterdam"
+      },
+      {
+        "bookingDate": "2026-05-14",
+        "valueDate": "2026-05-15",
+        "amount": "-18.2000",
+        "currency": "CHF",
+        "description": "COOP-2435 BERN BAHNHOF",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "coop bern bahnhof"
+      },
+      {
+        "bookingDate": "2026-05-17",
+        "valueDate": "2026-05-18",
+        "amount": "-12.4000",
+        "currency": "CHF",
+        "description": "SBB AUTOMATIC TICKET",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "sbb automatic ticket"
+      },
+      {
+        "bookingDate": "2026-05-19",
+        "valueDate": "2026-05-20",
+        "amount": "-23.4500",
+        "currency": "CHF",
+        "description": "AMAZON EU SARL LUXEMBOURG",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "amazon eu sarl luxembourg"
+      },
+      {
+        "bookingDate": "2026-05-22",
+        "valueDate": "2026-05-23",
+        "amount": "124.3000",
+        "currency": "CHF",
+        "description": "BOOKING.COM REFUND",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "booking com refund"
+      },
+      {
+        "bookingDate": "2026-05-28",
+        "valueDate": "2026-05-29",
+        "amount": "-100.0000",
+        "currency": "CHF",
+        "description": "JAHRESGEBUEHR MASTERCARD",
+        "counterparty": null,
+        "reference": null,
+        "balanceAfter": null,
+        "normalizedMerchantKey": "jahresgebuehr mastercard"
+      }
+    ],
+    "warnings": [
+      { "code": "invalid_date", "field": "bookingDate", "message": "Row 9 skipped because booking date 31.04.2026 could not be parsed", "rowNumber": 9 },
+      { "code": "invalid_amount", "field": "amount", "message": "Row 10 skipped because both debit and credit columns are populated", "rowNumber": 10 },
+      { "code": "missing_description", "field": "description", "message": "Row 11 skipped because description is empty", "rowNumber": 11 }
+    ]
+  },
+  "rawFieldChecks": {
+    "row2": {
+      "Buchungsdatum": "11.05.2026",
+      "Belastungsdatum": "12.05.2026",
+      "Branche": "BOOKING.COM AMSTERDAM",
+      "Belastung": "124.30",
+      "Originalbetrag": "130.00",
+      "Originalwährung": "EUR",
+      "Kurs": "0.9562"
+    },
+    "row5": {
+      "Buchungsdatum": "19.05.2026",
+      "Belastungsdatum": "20.05.2026",
+      "Branche": "AMAZON EU SARL LUXEMBOURG",
+      "Belastung": "23.45",
+      "Originalbetrag": "25.00",
+      "Originalwährung": "EUR",
+      "Kurs": "0.9380"
+    }
+  },
+  "notes": [
+    "normalizedMerchantKey: digit runs of >=2 are stripped (e.g. COOP-2435 → 'coop bern bahnhof'). Verified against normalize.ts: normalizeMerchantKey replaces \\b\\d{2,}\\b with empty.",
+    "row 4 (COOP) normalizedMerchantKey is 'coop bern bahnhof' (the '2435' is stripped, but the leading 'COOP-' resolves to 'coop' followed by the rest). Codex: confirm against normalizeMerchantKey('COOP-2435 BERN BAHNHOF') output and adjust expected if helper produces different lowercasing.",
+    "rowNumber convention here uses the transaction-row index after metadata block and column header (1-based). This contradicts generic-csv.test.ts which uses file-line index. Codex: pick one convention project-wide; spec defers to generic-csv if Codex picks file-line indexing — in that case update this expected.json's rowNumbers to file lines (CSV file rows 16/17/18 once comment-header preamble is counted) and add a note here."
+  ]
+}

@@ -61,24 +61,53 @@ enum HouseholdMemberRole {
   member
 }
 
+enum StatementInstitution {
+  ubs
+  revolut
+  fnb
+  standardbank
+  investec
+  generic
+  unknown
+}
+
+enum StatementImportStatus {
+  previewed
+  committed
+  failed
+}
+
+enum TransactionReviewState {
+  needs_review
+  auto_categorized
+  confirmed
+  ignored
+}
+
+enum TransactionRuleMatchType {
+  contains
+  exact
+  starts_with
+}
+
 model User {
-  id              String    @id @default(cuid())
+  id              String      @id @default(cuid())
   // Always lowercased on write — case-insensitive uniqueness without an extra column.
-  email           String    @unique
+  email           String      @unique
   passwordHash    String
   emailVerifiedAt DateTime?
-  role            UserRole  @default(user)
+  role            UserRole    @default(user)
   productTier     ProductTier @default(core)
-  active          Boolean   @default(true)
+  active          Boolean     @default(true)
   lastSignInAt    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  sessions          Session[]
-  memberships       HouseholdMember[]
-  emailTokens       EmailVerificationToken[]
-  passwordTokens    PasswordResetToken[]
-  auditLogs         AuditLog[]
+  sessions       Session[]
+  memberships    HouseholdMember[]
+  emailTokens    EmailVerificationToken[]
+  passwordTokens PasswordResetToken[]
+  auditLogs      AuditLog[]
 }
 
 // Sessions store the SHA-256 hash of the cookie token, never the token itself.
@@ -178,42 +207,46 @@ model Household {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  incomeEarners        IncomeEarner[]
-  categoryGroups       CategoryGroup[]
-  categories           Category[]
-  bankAccounts         BankAccount[]
-  budgetLineItems      BudgetLineItem[]
-  scheduledTransfers   ScheduledTransfer[]
-  investmentProjections InvestmentProjection[]
-  assets               Asset[]
-  members              HouseholdMember[]
+  incomeEarners              IncomeEarner[]
+  categoryGroups             CategoryGroup[]
+  categories                 Category[]
+  bankAccounts               BankAccount[]
+  budgetLineItems            BudgetLineItem[]
+  scheduledTransfers         ScheduledTransfer[]
+  investmentProjections      InvestmentProjection[]
+  assets                     Asset[]
+  members                    HouseholdMember[]
+  statementImports           StatementImport[]
+  actualTransactions         ActualTransaction[]
+  transactionCategoryRules   TransactionCategoryRule[]
+  transactionTransferMatches TransactionTransferMatch[]
 }
 
 model IncomeEarner {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   householdId String
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name        String
   notes       String?
-  active      Boolean  @default(true)
+  active      Boolean   @default(true)
   // Soft-delete marker. Set together with active=false so historical
   // forecasts can still reconstruct earners that existed at a past date.
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   budgetLineItems BudgetLineItem[]
 }
 
 model CategoryGroup {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   householdId String
   household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name        String
-  sortOrder   Int      @default(0)
+  sortOrder   Int       @default(0)
   deletedAt   DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   categories Category[]
 
@@ -221,64 +254,68 @@ model CategoryGroup {
 }
 
 model Category {
-  id          String       @id @default(cuid())
+  id          String        @id @default(cuid())
   householdId String
-  household   Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   groupId     String
   group       CategoryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   name        String
   type        CategoryType
-  sortOrder   Int          @default(0)
-  active      Boolean      @default(true)
+  sortOrder   Int           @default(0)
+  active      Boolean       @default(true)
   deletedAt   DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  budgetLineItems BudgetLineItem[]
+  budgetLineItems          BudgetLineItem[]
+  actualTransactions       ActualTransaction[]
+  transactionCategoryRules TransactionCategoryRule[]
 
   @@unique([householdId, groupId, name])
 }
 
 model BankAccount {
-  id                  String      @id @default(cuid())
-  householdId         String
-  household           Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name                String
-  institution         String?
-  accountType         AccountType @default(current)
-  notes               String?
-  active              Boolean     @default(true)
+  id                    String      @id @default(cuid())
+  householdId           String
+  household             Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name                  String
+  institution           String?
+  accountType           AccountType @default(current)
+  notes                 String?
+  active                Boolean     @default(true)
   // Monthly running cost (e.g. account fee). Charged once per month in the
   // forecast and surfaced under "Financial Management → Bank Charges".
-  monthlyCost         Decimal?    @db.Decimal(18, 4)
-  monthlyCostCurrency String?
+  monthlyCost           Decimal?    @db.Decimal(18, 4)
+  monthlyCostCurrency   String?
   // Annual interest rate (decimal fraction, e.g. 0.015 = 1.5%).
   //   savings: interest earned, compounded monthly per pocket.
   //   credit:  interest charged on the outstanding balance, monthly.
-  annualInterestRate  Decimal?    @db.Decimal(8, 6)
+  annualInterestRate    Decimal?    @db.Decimal(8, 6)
   // Investment-account specifics (used only when accountType = investment).
   // Lets the Investments page render a projection for a real account, the
   // same way it does for synthetic InvestmentProjection scenarios.
-  expectedAnnualReturn   Decimal? @db.Decimal(8, 6)
-  monthlyManagementCost  Decimal? @db.Decimal(18, 4)
+  expectedAnnualReturn  Decimal?    @db.Decimal(8, 6)
+  monthlyManagementCost Decimal?    @db.Decimal(18, 4)
   // Planning flags. Retirement covers Pillar 3a / pension-style accounts
   // that should be modelled with long-term investment assumptions. Kids
   // savings is earmarked for a child and excluded from household wealth
   // projections and emergency-fund buffers.
-  retirement          Boolean     @default(false)
-  kidsSavings         Boolean     @default(false)
+  retirement            Boolean     @default(false)
+  kidsSavings           Boolean     @default(false)
   // Credit-account specifics. Used by the Debt page to compute payoff time
   // and total interest if you keep paying the minimum.
-  minimumMonthlyPayment  Decimal? @db.Decimal(18, 4)
-  deletedAt           DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  minimumMonthlyPayment Decimal?    @db.Decimal(18, 4)
+  deletedAt             DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
-  currencies              BankAccountCurrency[]
-  budgetLineItems         BudgetLineItem[]
-  sourceScheduledTransfers ScheduledTransfer[] @relation("SourceAccount")
-  targetScheduledTransfers ScheduledTransfer[] @relation("TargetAccount")
-  investmentProjections   InvestmentProjection[]
+  currencies               BankAccountCurrency[]
+  budgetLineItems          BudgetLineItem[]
+  sourceScheduledTransfers ScheduledTransfer[]    @relation("SourceAccount")
+  targetScheduledTransfers ScheduledTransfer[]    @relation("TargetAccount")
+  investmentProjections    InvestmentProjection[]
+  statementImports         StatementImport[]
+  actualTransactions       ActualTransaction[]
 }
 
 model BankAccountCurrency {
@@ -291,7 +328,8 @@ model BankAccountCurrency {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  snapshots      BalanceSnapshot[]
+  snapshots          BalanceSnapshot[]
+  actualTransactions ActualTransaction[]
 
   @@unique([accountId, currency])
 }
@@ -302,47 +340,47 @@ model BankAccountCurrency {
 // `asOf`, and the latest snapshot is always mirrored onto
 // BankAccountCurrency.currentBalance so forecasts pick it up.
 model BalanceSnapshot {
-  id              String              @id @default(cuid())
+  id                String              @id @default(cuid())
   accountCurrencyId String
-  accountCurrency BankAccountCurrency @relation(fields: [accountCurrencyId], references: [id], onDelete: Cascade)
-  balance         Decimal             @db.Decimal(18, 4)
-  asOf            DateTime
-  note            String?
-  createdAt       DateTime            @default(now())
+  accountCurrency   BankAccountCurrency @relation(fields: [accountCurrencyId], references: [id], onDelete: Cascade)
+  balance           Decimal             @db.Decimal(18, 4)
+  asOf              DateTime
+  note              String?
+  createdAt         DateTime            @default(now())
 
   @@index([accountCurrencyId, asOf])
 }
 
 model BudgetLineItem {
-  id             String         @id @default(cuid())
-  householdId    String
-  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name           String
-  itemType       BudgetItemType
-  amount         Decimal        @db.Decimal(18, 4)
-  currency       String
-  recurrence     Recurrence     @default(monthly)
-  startDate      DateTime
-  endDate        DateTime?
+  id                    String         @id @default(cuid())
+  householdId           String
+  household             Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name                  String
+  itemType              BudgetItemType
+  amount                Decimal        @db.Decimal(18, 4)
+  currency              String
+  recurrence            Recurrence     @default(monthly)
+  startDate             DateTime
+  endDate               DateTime?
   // Day of the month the cashflow hits the account (1-31). Clamped to the
   // last day of shorter months. Used by the daily forecast to detect dips.
   // Ignored for `weekly` (uses startDate weekday) and `once` (uses startDate).
-  debitDayOfMonth Int?
-  categoryId     String
-  category       Category       @relation(fields: [categoryId], references: [id])
-  accountId      String?
-  account        BankAccount?   @relation(fields: [accountId], references: [id])
-  incomeEarnerId String?
-  incomeEarner   IncomeEarner?  @relation(fields: [incomeEarnerId], references: [id])
+  debitDayOfMonth       Int?
+  categoryId            String
+  category              Category       @relation(fields: [categoryId], references: [id])
+  accountId             String?
+  account               BankAccount?   @relation(fields: [accountId], references: [id])
+  incomeEarnerId        String?
+  incomeEarner          IncomeEarner?  @relation(fields: [incomeEarnerId], references: [id])
   // For investment_contribution items only: the contribution accumulates a
   // notional balance growing at expectedAnnualReturn (after monthlyManagementCost).
-  expectedAnnualReturn  Decimal? @db.Decimal(8, 6)
-  monthlyManagementCost Decimal? @db.Decimal(18, 4)
-  notes          String?
-  active         Boolean        @default(true)
-  deletedAt      DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  expectedAnnualReturn  Decimal?       @db.Decimal(8, 6)
+  monthlyManagementCost Decimal?       @db.Decimal(18, 4)
+  notes                 String?
+  active                Boolean        @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 }
 
 model ScheduledTransfer {
@@ -403,7 +441,7 @@ model Asset {
   value                  Decimal       @db.Decimal(18, 4)
   currency               String
   // Signed annual rate applied to the current value when projecting forward.
-  annualAppreciationRate Decimal       @db.Decimal(8, 6) @default(0)
+  annualAppreciationRate Decimal       @default(0) @db.Decimal(8, 6)
   acquiredAt             DateTime?
   notes                  String?
   active                 Boolean       @default(true)
@@ -416,21 +454,127 @@ model Asset {
 
 model InvestmentProjection {
   id                    String                @id @default(cuid())
-  householdId            String
-  household              Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdId           String
+  household             Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name                  String
-  startingCapital        Decimal               @db.Decimal(18, 4)
+  startingCapital       Decimal               @db.Decimal(18, 4)
   currency              String
-  recurringContribution  Decimal               @db.Decimal(18, 4)
-  contributionFrequency  ContributionFrequency @default(monthly)
-  expectedAnnualReturn   Decimal               @db.Decimal(8, 6)
-  annualFeeDrag          Decimal               @db.Decimal(8, 6) @default(0)
-  inflationRate          Decimal               @db.Decimal(8, 6) @default(0)
-  horizonYears           Int
-  accountId              String?
-  account                BankAccount?          @relation(fields: [accountId], references: [id])
-  active                 Boolean               @default(true)
-  deletedAt              DateTime?
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
+  recurringContribution Decimal               @db.Decimal(18, 4)
+  contributionFrequency ContributionFrequency @default(monthly)
+  expectedAnnualReturn  Decimal               @db.Decimal(8, 6)
+  annualFeeDrag         Decimal               @default(0) @db.Decimal(8, 6)
+  inflationRate         Decimal               @default(0) @db.Decimal(8, 6)
+  horizonYears          Int
+  accountId             String?
+  account               BankAccount?          @relation(fields: [accountId], references: [id])
+  active                Boolean               @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+}
+
+model StatementImport {
+  id             String                @id @default(cuid())
+  householdId    String
+  household      Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  accountId      String?
+  account        BankAccount?          @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  parserKey      String
+  parserVersion  String
+  institution    StatementInstitution  @default(unknown)
+  fileName       String?
+  fileMimeType   String?
+  contentHash    String
+  status         StatementImportStatus @default(previewed)
+  rowCount       Int                   @default(0)
+  importedCount  Int                   @default(0)
+  duplicateCount Int                   @default(0)
+  warningCount   Int                   @default(0)
+  warnings       Json?
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  transactions ActualTransaction[]
+
+  @@unique([householdId, contentHash])
+  @@index([householdId, createdAt])
+  @@index([accountId])
+}
+
+model ActualTransaction {
+  id                    String                 @id @default(cuid())
+  householdId           String
+  household             Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  importId              String?
+  statementImport       StatementImport?       @relation(fields: [importId], references: [id], onDelete: SetNull)
+  accountId             String?
+  account               BankAccount?           @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  accountCurrencyId     String?
+  accountCurrency       BankAccountCurrency?   @relation(fields: [accountCurrencyId], references: [id], onDelete: SetNull)
+  categoryId            String?
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  institution           StatementInstitution   @default(unknown)
+  bookingDate           DateTime
+  valueDate             DateTime?
+  amount                Decimal                @db.Decimal(18, 4)
+  currency              String
+  balanceAfter          Decimal?               @db.Decimal(18, 4)
+  description           String
+  counterparty          String?
+  reference             String?
+  normalizedMerchantKey String?
+  raw                   Json
+  dedupeHash            String
+  reviewState           TransactionReviewState @default(needs_review)
+  notes                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  transferDebitMatches  TransactionTransferMatch[] @relation("TransferDebit")
+  transferCreditMatches TransactionTransferMatch[] @relation("TransferCredit")
+
+  @@unique([householdId, dedupeHash])
+  @@index([householdId, bookingDate])
+  @@index([householdId, categoryId, bookingDate])
+  @@index([householdId, normalizedMerchantKey])
+  @@index([importId])
+  @@index([accountId, bookingDate])
+}
+
+model TransactionCategoryRule {
+  id                String                   @id @default(cuid())
+  householdId       String
+  household         Household                @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          Category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  matchType         TransactionRuleMatchType @default(contains)
+  pattern           String
+  normalizedPattern String
+  countryProfile    String?
+  priority          Int                      @default(100)
+  active            Boolean                  @default(true)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([householdId, active, priority])
+  @@index([householdId, normalizedPattern])
+  @@index([categoryId])
+}
+
+model TransactionTransferMatch {
+  id                  String            @id @default(cuid())
+  householdId         String
+  household           Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  debitTransactionId  String
+  debitTransaction    ActualTransaction @relation("TransferDebit", fields: [debitTransactionId], references: [id], onDelete: Cascade)
+  creditTransactionId String
+  creditTransaction   ActualTransaction @relation("TransferCredit", fields: [creditTransactionId], references: [id], onDelete: Cascade)
+  confidence          Decimal           @db.Decimal(8, 6)
+  reason              String?
+  createdAt           DateTime          @default(now())
+
+  @@unique([householdId, debitTransactionId, creditTransactionId])
+  @@index([householdId, debitTransactionId])
+  @@index([householdId, creditTransactionId])
 }

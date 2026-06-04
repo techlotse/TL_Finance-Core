@@ -17,6 +17,7 @@ Core groups:
 | Identity | `User`, `Session`, `HouseholdMember`, `EmailVerificationToken`, `PasswordResetToken` |
 | Household setup | `Household`, `IncomeEarner`, `CategoryGroup`, `Category` |
 | Money movement | `BankAccount`, `BankAccountCurrency`, `BudgetLineItem`, `ScheduledTransfer` |
+| Actual analysis | `StatementImport`, `ActualTransaction`, `TransactionCategoryRule`, `TransactionTransferMatch` |
 | Forecast anchors | `BalanceSnapshot`, `ExchangeRate` |
 | Net worth | `Asset`, `InvestmentProjection` |
 | Operations | `AuditLog`, `AdminConfig` |
@@ -89,3 +90,12 @@ payloads reference rows by stable names instead of database IDs.
   the balance.
 - `InvestmentProjection` can be standalone or attached to a real investment
   account.
+- `StatementImport` records a deterministic statement parser run. Imports are
+  idempotent by `(householdId, contentHash)`.
+- `ActualTransaction` stores normalized statement rows with signed Decimal
+  amounts, original raw row JSON, review state, and a household-scoped dedupe
+  hash. Positive amounts are inflows; negative amounts are outflows.
+- `TransactionCategoryRule` stores deterministic category rules for actual
+  transactions. Rules are household-scoped and can later be profiled by country.
+- `TransactionTransferMatch` links actual debit and credit rows that represent
+  internal transfers or FX exchanges so analysis can exclude them from spending.

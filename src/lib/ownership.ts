@@ -145,3 +145,42 @@ export async function assertAccountCurrencyOwnership(
   });
   if (!pocket) throw new OwnershipError(message, 404);
 }
+
+export async function assertAccountCurrencyPocketOwnership(
+  householdId: string,
+  accountCurrencyId: string
+): Promise<void> {
+  const pocket = await prisma.bankAccountCurrency.findUnique({
+    where: { id: accountCurrencyId },
+    select: { account: { select: { householdId: true } } }
+  });
+  if (!pocket || pocket.account.householdId !== householdId) {
+    throw new OwnershipError("Account currency not found", 404);
+  }
+}
+
+export async function assertActualTransactionOwnership(
+  householdId: string,
+  transactionId: string
+): Promise<void> {
+  const transaction = await prisma.actualTransaction.findUnique({
+    where: { id: transactionId },
+    select: { householdId: true }
+  });
+  if (!transaction || transaction.householdId !== householdId) {
+    throw new OwnershipError("Transaction not found", 404);
+  }
+}
+
+export async function assertStatementImportOwnership(
+  householdId: string,
+  importId: string
+): Promise<void> {
+  const statementImport = await prisma.statementImport.findUnique({
+    where: { id: importId },
+    select: { householdId: true }
+  });
+  if (!statementImport || statementImport.householdId !== householdId) {
+    throw new OwnershipError("Statement import not found", 404);
+  }
+}

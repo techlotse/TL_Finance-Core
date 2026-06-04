@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "provenance": "synthetic",
+    "spec": "docs/strategy/parsers/UBS_CAMT053.md",
+    "covers": "single-Stmt CHF account with salary, rent ISR, card, FX leg, Pillar 3a, refund, SBB, Krankenkasse; plus pending/missing-sign/invalid-date warnings"
+  },
+  "detection": {
+    "matched": true,
+    "minConfidence": 0.95,
+    "reasonContains": "UBSWCHZH"
+  },
+  "balances": {
+    "opening": "7500.0000",
+    "closing": "9591.0500",
+    "currency": "CHF"
+  },
+  "statement": {
+    "parserKey": "ubs-camt053",
+    "parserVersion": "0.1.0",
+    "institution": "ubs",
+    "accountName": null,
+    "accountIdentifier": "CH9300762011623852957",
+    "rows": [
+      {
+        "bookingDate": "2026-05-01",
+        "valueDate": "2026-05-01",
+        "amount": "5000.0000",
+        "currency": "CHF",
+        "description": "Salary May 2026",
+        "counterparty": "TechLotse AG",
+        "reference": "SAL-202605",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "techlotse ag"
+      },
+      {
+        "bookingDate": "2026-05-02",
+        "valueDate": "2026-05-02",
+        "amount": "-2200.0000",
+        "currency": "CHF",
+        "description": "210000000003139471430009017 · Miete Mai 2026 Wohnung 3.5",
+        "counterparty": "Hausverwaltung Bern AG",
+        "reference": "RENT-202605",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "hausverwaltung bern ag"
+      },
+      {
+        "bookingDate": "2026-05-05",
+        "valueDate": "2026-05-05",
+        "amount": "-87.4000",
+        "currency": "CHF",
+        "description": "COOP-2435 BERN BAHNHOF",
+        "counterparty": "Coop",
+        "reference": "UBSACQ-3",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "coop"
+      },
+      {
+        "bookingDate": "2026-05-10",
+        "valueDate": "2026-05-11",
+        "amount": "-23.4500",
+        "currency": "CHF",
+        "description": "AMAZON EU LUXEMBOURG",
+        "counterparty": "Amazon EU",
+        "reference": "AMZN-XF-4",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "amazon eu"
+      },
+      {
+        "bookingDate": "2026-05-15",
+        "valueDate": "2026-05-15",
+        "amount": "-150.0000",
+        "currency": "CHF",
+        "description": "Saeule 3a Einzahlung Mai 2026",
+        "counterparty": "VIAC",
+        "reference": "3A-VIAC-202605",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "viac"
+      },
+      {
+        "bookingDate": "2026-05-18",
+        "valueDate": "2026-05-18",
+        "amount": "12.0000",
+        "currency": "CHF",
+        "description": "COOP-2435 RETURN",
+        "counterparty": "Coop",
+        "reference": "COOP-REF-6",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "coop"
+      },
+      {
+        "bookingDate": "2026-05-20",
+        "valueDate": "2026-05-20",
+        "amount": "-31.5000",
+        "currency": "CHF",
+        "description": "SBB CFF FFS BERN HB",
+        "counterparty": null,
+        "reference": "UBSACQ-7",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "sbb cff ffs bern hb"
+      },
+      {
+        "bookingDate": "2026-05-25",
+        "valueDate": "2026-05-26",
+        "amount": "-428.6000",
+        "currency": "CHF",
+        "description": "RF8420180000000000000000089 · Praemie Grundversicherung Mai 2026",
+        "counterparty": "Helsana Versicherungen AG",
+        "reference": "HELS-202605",
+        "balanceAfter": null,
+        "normalizedMerchantKey": "helsana versicherungen ag"
+      }
+    ],
+    "warnings": [
+      { "code": "pending_row", "field": "status", "message": "Row NTRY-P1 skipped because status is pending" },
+      { "code": "missing_sign", "field": "cdtDbtInd", "message": "Row NTRY-F1 skipped because CdtDbtInd is missing" },
+      { "code": "invalid_date", "field": "bookingDate", "message": "Row NTRY-D1 skipped because booking date 2026-13-40 could not be parsed" }
+    ]
+  },
+  "rawFieldChecks": {
+    "row0": {
+      "ntryRef": "NTRY-1",
+      "cdtDbtInd": "CRDT",
+      "endToEndId": "SAL-202605",
+      "remittanceUnstrd": "Salary May 2026",
+      "debtorName": "TechLotse AG",
+      "status": "BOOK"
+    },
+    "row3": {
+      "ntryRef": "NTRY-4",
+      "cdtDbtInd": "DBIT",
+      "endToEndId": "AMZN-XF-4",
+      "remittanceUnstrd": "AMAZON EU LUXEMBOURG",
+      "creditorName": "Amazon EU",
+      "instructedAmount": "25.00",
+      "instructedCurrency": "EUR",
+      "exchangeRate": "0.9380",
+      "status": "BOOK"
+    },
+    "row1": {
+      "ntryRef": "NTRY-2",
+      "cdtDbtInd": "DBIT",
+      "endToEndId": "RENT-202605",
+      "remittanceUnstrd": "Miete Mai 2026 Wohnung 3.5",
+      "remittanceStrdRef": "210000000003139471430009017",
+      "creditorName": "Hausverwaltung Bern AG",
+      "status": "BOOK"
+    }
+  },
+  "notes": [
+    "rowNumber on warnings is omitted on purpose — UBS Ntry blocks are not numbered like CSV rows. The parser MUST set rowNumber to the index of the Ntry within Stmt (1-based, counting all Ntry including skipped). Codex: please confirm convention before finalizing the assertion in ubs-camt053.test.ts.",
+    "normalizedMerchantKey is computed from counterparty when present (RltdPties/Cdtr or Dbtr/Nm), otherwise from description. See spec §Counterparty.",
+    "Each row's raw also contains bkTxCdProprietary when BkTxCd/Prtry/Cd exists; the synthetic fixture omits Prtry so the field is absent in raw."
+  ]
+}

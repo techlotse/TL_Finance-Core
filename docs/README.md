@@ -71,6 +71,7 @@ Use these entry points:
 | Review security audit | [review/SECURITY_AUDIT_V0_7_5.md](review/SECURITY_AUDIT_V0_7_5.md) |
 | Track releases | [release/CHANGELOG.md](release/CHANGELOG.md) |
 | Plan next work | [strategy/ROADMAP.md](strategy/ROADMAP.md) |
+| Plan product split and statement analysis | [strategy/PRODUCT_SPLIT_AND_STATEMENT_INGESTION.md](strategy/PRODUCT_SPLIT_AND_STATEMENT_INGESTION.md) |
 
 ## Troubleshooting
 
