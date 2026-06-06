@@ -7,12 +7,18 @@ import { writeAudit } from "@/lib/audit";
 import { getActiveHouseholdId } from "@/lib/household";
 import { assertAccountOwnership } from "@/lib/ownership";
 import {
+  categorizeRow,
   createTransactionDedupeHash,
+  detectInternalFlow,
+  findTransferPairs,
+  normalizeText,
   parseStatementInput
 } from "@/lib/statements";
 import { readStatementImportRequest } from "@/lib/statements/request";
 
 export const runtime = "nodejs";
+
+const PROFILE_KEY = "swiss";
 
 export async function GET() {
   try {
@@ -59,13 +65,44 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const categories = await prisma.category.findMany({
+      where: { householdId, deletedAt: null },
+      select: { id: true, name: true }
+    });
+    const categoryIdByName = new Map(
+      categories.map((c) => [normalizeText(c.name), c.id])
+    );
+    const classified = parsed.rows.map((row) => {
+      const internal = detectInternalFlow(row, {
+        profileKey: PROFILE_KEY,
+        institution: parsed.institution
+      });
+      if (internal) {
+        return {
+          row,
+          categoryId: null as string | null,
+          reviewState: "ignored" as const,
+          notes: `Internal: ${internal.reason}`
+        };
+      }
+      const categoryName = categorizeRow(row, { profileKey: PROFILE_KEY });
+      const categoryId = categoryName
+        ? categoryIdByName.get(normalizeText(categoryName)) ?? null
+        : null;
+      return {
+        row,
+        categoryId,
+        reviewState: (categoryId ? "auto_categorized" : "needs_review") as
+          | "auto_categorized"
+          | "needs_review",
+        notes: null as string | null
+      };
+    });
+
     const result = await prisma.$transaction(async (tx) => {
       const statementImport = await tx.statementImport.upsert({
         where: {
-          householdId_contentHash: {
-            householdId,
-            contentHash: input.contentHash
-          }
+          householdId_contentHash: { householdId, contentHash: input.contentHash }
         },
         create: {
           householdId,
@@ -104,13 +141,14 @@ export async function POST(req: NextRequest) {
       });
 
       const inserted = await tx.actualTransaction.createMany({
-        data: parsed.rows.map((row) => ({
+        data: classified.map(({ row, categoryId, reviewState, notes }) => ({
           householdId,
           importId: statementImport.id,
           accountId: accountId ?? null,
           accountCurrencyId: accountId
             ? pocketByCurrency.get(row.currency.toUpperCase()) ?? null
             : null,
+          categoryId,
           institution: parsed.institution,
           bookingDate: new Date(row.bookingDate),
           valueDate: row.valueDate ? new Date(row.valueDate) : null,
@@ -128,7 +166,8 @@ export async function POST(req: NextRequest) {
             institution: parsed.institution,
             row
           }),
-          reviewState: "needs_review"
+          reviewState,
+          notes
         })),
         skipDuplicates: true
       });
@@ -136,10 +175,7 @@ export async function POST(req: NextRequest) {
       const duplicateCount = parsed.rows.length - inserted.count;
       return tx.statementImport.update({
         where: { id: statementImport.id },
-        data: {
-          importedCount: inserted.count,
-          duplicateCount
-        },
+        data: { importedCount: inserted.count, duplicateCount },
         include: { account: { select: { id: true, name: true } } }
       });
     });
@@ -159,10 +195,71 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    try {
+      await reconcileTransfers(householdId);
+    } catch {
+      /* non-fatal */
+    }
+
     return jsonOk(serialize({ ok: true, value: result }), { status: 201 });
   } catch (err) {
     return handleApiError(err);
   }
+}
+
+async function reconcileTransfers(householdId: string): Promise<void> {
+  const recent = await prisma.actualTransaction.findMany({
+    where: { householdId, reviewState: { not: "ignored" } },
+    orderBy: [{ bookingDate: "desc" }],
+    take: 800,
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      bookingDate: true,
+      accountId: true,
+      institution: true
+    }
+  });
+  if (recent.length < 2) return;
+
+  const pairs = findTransferPairs(
+    recent.map((r) => ({
+      amount: r.amount.toString(),
+      currency: r.currency,
+      bookingDate: r.bookingDate.toISOString().slice(0, 10),
+      accountKey: r.accountId ?? `${r.institution}:${r.currency}`
+    }))
+  );
+  if (pairs.length === 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    for (const pair of pairs) {
+      const debit = recent[pair.debitIndex];
+      const credit = recent[pair.creditIndex];
+      await tx.transactionTransferMatch.upsert({
+        where: {
+          householdId_debitTransactionId_creditTransactionId: {
+            householdId,
+            debitTransactionId: debit.id,
+            creditTransactionId: credit.id
+          }
+        },
+        create: {
+          householdId,
+          debitTransactionId: debit.id,
+          creditTransactionId: credit.id,
+          confidence: pair.confidence,
+          reason: pair.reason
+        },
+        update: {}
+      });
+      await tx.actualTransaction.updateMany({
+        where: { householdId, id: { in: [debit.id, credit.id] } },
+        data: { reviewState: "ignored", notes: "Internal: matched transfer" }
+      });
+    }
+  });
 }
 
 async function loadAccountCurrencyMap(

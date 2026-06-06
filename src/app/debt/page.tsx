@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getActiveHouseholdForPage } from "@/lib/page-auth";
 import { PageHeader } from "@/components/page-header";
+import { PlanningPreviewBanner } from "@/components/planning-preview-banner";
 import { DebtClient, type DebtAccountRow } from "./debt-client";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function DebtPage() {
         title="Debt"
         description="Credit accounts, payoff projections and total interest if you stick to the minimum."
       />
+      <PlanningPreviewBanner tool="Debt" />
       <DebtClient accounts={rows} baseCurrency={household.baseCurrency} />
     </>
   );

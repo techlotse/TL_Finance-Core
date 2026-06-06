@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getActiveHouseholdForPage } from "@/lib/page-auth";
 import { ALLOWED_HORIZONS, forecastBalances, type Horizon } from "@/lib/forecast";
 import { PageHeader } from "@/components/page-header";
+import { PlanningPreviewBanner } from "@/components/planning-preview-banner";
 import { Badge } from "@/components/ui/badge";
 import { ForecastClient, type ForecastPayload } from "./forecast-client";
 
@@ -80,6 +81,7 @@ export default async function ForecastPage({
         description={`Balance trajectory in ${household.baseCurrency}.`}
         actions={<Badge variant="outline">{horizon}-year horizon</Badge>}
       />
+      <PlanningPreviewBanner tool="Forecast" />
       <ForecastClient horizon={horizon} initial={payload} />
     </>
   );

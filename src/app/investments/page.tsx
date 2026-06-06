@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getActiveHouseholdForPage } from "@/lib/page-auth";
 import { PageHeader } from "@/components/page-header";
+import { PlanningPreviewBanner } from "@/components/planning-preview-banner";
 import {
   InvestmentsClient,
   type ProjectionRow,
@@ -66,6 +67,7 @@ export default async function InvestmentsPage() {
         title="Investments"
         description="Project nominal and inflation-adjusted growth."
       />
+      <PlanningPreviewBanner tool="Investments" />
       <InvestmentsClient
         initialProjections={rows}
         accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}

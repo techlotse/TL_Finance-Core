@@ -1,4 +1,7 @@
 import { genericCsvParser } from "./parsers/generic-csv";
+import { revolutCsvParser } from "./parsers/revolut-csv";
+import { ubsAccountCsvParser } from "./parsers/ubs-account-csv";
+import { ubsCardCsvParser } from "./parsers/ubs-card-csv";
 import type {
   NormalizedStatement,
   ParserDetection,
@@ -6,7 +9,13 @@ import type {
   StatementParser
 } from "./types";
 
-export const STATEMENT_PARSERS: StatementParser[] = [genericCsvParser];
+// Bank-specific parsers first; generic CSV is the low-confidence fallback.
+export const STATEMENT_PARSERS: StatementParser[] = [
+  ubsAccountCsvParser,
+  ubsCardCsvParser,
+  revolutCsvParser,
+  genericCsvParser
+];
 
 export function detectStatementParser(input: StatementInput): {
   parser: StatementParser | null;
@@ -48,7 +57,6 @@ export async function parseStatementInput({
       422
     );
   }
-
   const detection = parser.detect(input);
   if (!detection.matched) {
     throw statusError(detection.reason, 422);

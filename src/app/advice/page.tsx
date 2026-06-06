@@ -8,6 +8,7 @@ import {
 import { requirePageSession } from "@/lib/page-auth";
 import { hasPlanAtLeast, normaliseProductTier } from "@/lib/plans";
 import { PageHeader } from "@/components/page-header";
+import { PlanningPreviewBanner } from "@/components/planning-preview-banner";
 import { ProductBrandMark } from "@/components/product-brand";
 import { AdviceClient } from "./advice-client";
 
@@ -32,6 +33,7 @@ export default async function AdvicePage() {
           }
           description="Smart and AI advisory modules are paid TL Finance offerings."
         />
+        <PlanningPreviewBanner tool="Advice" />
         <AdviceClient
           tier={tier}
           baseCurrency={ctx.membership.household.baseCurrency}
@@ -59,6 +61,7 @@ export default async function AdvicePage() {
         }
         description={`Planning recommendations in ${snapshot.baseCurrency}.`}
       />
+      <PlanningPreviewBanner tool="Advice" />
       <AdviceClient
         tier={tier}
         baseCurrency={snapshot.baseCurrency}
